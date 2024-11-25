@@ -14711,7 +14711,7 @@ function storage_init(dbName /*: string*/) /*: Promise<Storage>*/{
   init: storage_init,
   getType: getType
 }, _augment()));
-;// CONCATENATED MODULE: ./src/constants-configs.js
+;// CONCATENATED MODULE: ./src/sdk/constants-configs.js
 
 
 
@@ -14767,6 +14767,8 @@ _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
 _defineProperty(ConstantsConfig, "sdk_version", '1.2.0-alpha');
+_defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
+_defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
 ;// CONCATENATED MODULE: ./src/sdk/default-params.js
 
@@ -15326,14 +15328,14 @@ function getDeviceName() {
   var userAgent = navigator.userAgent;
   parser.setUA(userAgent);
   var result = parser.getResult();
-  var deviceName = result.device.model || 'Unknown Device';
+  var deviceName = result.device.model || null;
   return deviceName;
 }
 function getDeviceManufacturer() {
   var userAgent = navigator.userAgent;
   parser.setUA(userAgent);
   var result = parser.getResult();
-  var manufacturer = result.device.vendor || 'Unknown Manufacturer';
+  var manufacturer = result.device.vendor || null;
   return manufacturer;
 }
 function getBrowserInfo() {
@@ -15370,8 +15372,8 @@ function _getBrowserInfo() {
             wout_height = getWindowOuterHeight();
             display_width = getDisplayWidth();
             display_height = getDisplayHeight();
-            screen_density = getScreenDensity(); // Get screen density category
-            screen_size = getScreenSizeInches(); // Get screen size in inches
+            screen_density = getScreenSizeInches(); // Get screen size in inches
+            screen_size = getScreenDensity(); // Get screen density category
             web_engine = getWebEngine();
             user_agent = getUserAgent();
             return _context.abrupt("return", {
@@ -15538,12 +15540,12 @@ function _getDisplayHeight() {
 }
 function _getScreenDensity() {
   return {
-    screenDensity: getScreenDensity()
+    screenDensity: getScreenSizeInches()
   };
 }
 function _getScreenSizeInches() {
   return {
-    screenSize: getScreenSizeInches()
+    screenSize: getScreenDensity()
   };
 }
 function _getWebEngine() {
@@ -19363,6 +19365,16 @@ var SmartBanner = /*#__PURE__*/function () {
 
 
 
+var isInitialized = false;
+
+// Function to initialize the configuration or any setup tasks
+function config_api_request_init() {
+  if (isInitialized) return;
+  isInitialized = true;
+  constants_configs.CONFIG_API_HTTP_ERROR_STATUS = false;
+  constants_configs.HTTP_STATUS_CODE = 200;
+  constants_configs.app_settings_enabled = false;
+}
 function callApi(_x, _x2, _x3, _x4, _x5) {
   return _callApi.apply(this, arguments);
 }
@@ -19374,6 +19386,7 @@ function _callApi() {
         switch (_context.prev = _context.next) {
           case 0:
             url = 'https://config.wisetrack.io'; // Your API endpoint
+            config_api_request_init();
             console.log('API appToken:', appToken);
             console.log('API sdkVersion:', sdkVersion);
             console.log('API sdkHash:', sdkHash);
@@ -19385,8 +19398,8 @@ function _callApi() {
               sdk_hash: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
               sdk_platform: 'android_native'
             };
-            _context.prev = 7;
-            _context.next = 10;
+            _context.prev = 8;
+            _context.next = 11;
             return fetch(url, {
               method: 'POST',
               headers: {
@@ -19394,17 +19407,19 @@ function _callApi() {
               },
               body: JSON.stringify(body) // Sending the body as JSON
             });
-          case 10:
+          case 11:
             response = _context.sent;
             if (response.ok) {
-              _context.next = 13;
+              _context.next = 16;
               break;
             }
+            constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
+            constants_configs.HTTP_STATUS_CODE = response.status;
             throw new Error("HTTP error! Status: ".concat(response.status));
-          case 13:
-            _context.next = 15;
+          case 16:
+            _context.next = 18;
             return response.json();
-          case 15:
+          case 18:
             responseData = _context.sent;
             console.log('API Response:', responseData);
             if (responseData.success && responseData.result) {
@@ -19442,18 +19457,20 @@ function _callApi() {
               console.log('sdk_update :', sdk_update);
               console.log('force_update :', force_update);
             }
-            _context.next = 23;
+            _context.next = 28;
             break;
-          case 20:
-            _context.prev = 20;
-            _context.t0 = _context["catch"](7);
-            console.error('API call failed:', _context.t0);
           case 23:
+            _context.prev = 23;
+            _context.t0 = _context["catch"](8);
+            constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
+            constants_configs.HTTP_STATUS_CODE = 404;
+            console.error('API call failed:', _context.t0);
+          case 28:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[7, 20]]);
+    }, _callee, null, [[8, 23]]);
   }));
   return _callApi.apply(this, arguments);
 }
@@ -19712,6 +19729,7 @@ function _initSdk() {
       logLevel,
       logOutput,
       options,
+      CONFIG_API_RETRY,
       versionConfig,
       _args = arguments;
     return regeneratorRuntime_regeneratorRuntime().wrap(function _callee$(_context) {
@@ -19721,35 +19739,54 @@ function _initSdk() {
             _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, _excluded);
             logger.setLogLevel(logLevel, logOutput);
             _context.prev = 2;
+            CONFIG_API_RETRY = 0;
+            console.log(CONFIG_API_RETRY);
             versionConfig = new VersionConfig(PlatformType.WEB, EnvirmentType.production);
-            _context.next = 6;
-            return callApi('23sd4f5ANo', versionConfig.sdk_version, versionConfig.sdk_hash_Build, versionConfig.sdk_platform, versionConfig.sdk_envirment);
           case 6:
-            if (!constants_configs.app_settings_enabled) {
-              _context.next = 9;
+            if (!(CONFIG_API_RETRY <= 3)) {
+              _context.next = 16;
               break;
             }
             _context.next = 9;
-            return callSettingsApi('ksjflsjfjklfdas');
+            return callApi('23sd4f5ANo', versionConfig.sdk_version, versionConfig.sdk_hash_Build, versionConfig.sdk_platform, versionConfig.sdk_envirment);
           case 9:
-            console.log('EVENT URL :', constants_configs.app_settings_enabled);
+            if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
+              _context.next = 11;
+              break;
+            }
+            return _context.abrupt("break", 16);
+          case 11:
+            _context.next = 13;
+            return sleep(10000);
+          case 13:
+            CONFIG_API_RETRY++;
+            _context.next = 6;
+            break;
+          case 16:
+            if (!constants_configs.app_settings_enabled) {
+              _context.next = 19;
+              break;
+            }
+            _context.next = 19;
+            return callSettingsApi('ksjflsjfjklfdas');
+          case 19:
             if (!constants_configs.sdk_enabled) {
-              _context.next = 18;
+              _context.next = 27;
               break;
             }
             if (!_isInitialised()) {
-              _context.next = 14;
+              _context.next = 23;
               break;
             }
             logger.error('You already initiated your instance');
             return _context.abrupt("return");
-          case 14:
+          case 23:
             if (!config.hasMissing(options)) {
-              _context.next = 16;
+              _context.next = 25;
               break;
             }
             return _context.abrupt("return");
-          case 16:
+          case 25:
             _isInitialising = true;
             storage.init(options.namespace).then(function (availableStorage) {
               if (availableStorage.type === STORAGE_TYPES.NO_STORAGE) {
@@ -19760,19 +19797,19 @@ function _initSdk() {
               main_options = _objectSpread2({}, options);
               _start(options);
             });
-          case 18:
-            _context.next = 23;
+          case 27:
+            _context.next = 32;
             break;
-          case 20:
-            _context.prev = 20;
+          case 29:
+            _context.prev = 29;
             _context.t0 = _context["catch"](2);
             logger.error('Error initializing SDK:', _context.t0);
-          case 23:
+          case 32:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[2, 20]]);
+    }, _callee, null, [[2, 29]]);
   }));
   return _initSdk.apply(this, arguments);
 }
@@ -20231,6 +20268,11 @@ function _restartAfterAsyncEnable() {
   if (main_options) {
     _start(main_options);
   }
+}
+function sleep(ms) {
+  return new main_Promise(function (resolve) {
+    return setTimeout(resolve, ms);
+  });
 }
 var WiseTrack = {
   initSdk: initSdk,
