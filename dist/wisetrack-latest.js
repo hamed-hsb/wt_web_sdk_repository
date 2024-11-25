@@ -19393,7 +19393,7 @@ function _callApi() {
             console.log('API sdkPlatform:', sdkPlatform);
             console.log('API sdkEnvirment:', sdkEnvirment);
             body = {
-              env: 'debug',
+              env: 'stage',
               sdk_version: '1.5.7',
               sdk_hash: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
               sdk_platform: 'android_native'
