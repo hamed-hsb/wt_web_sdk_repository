@@ -15340,7 +15340,14 @@ function getDeviceManufacturer() {
   return manufacturer;
 }
 function getScreenColorDepth() {
-  return window.screen.colorDepth;
+  var colorDepth = window.screen.colorDepth;
+  if (colorDepth <= 16) {
+    return 'low';
+  } else if (colorDepth <= 24) {
+    return 'medium';
+  } else {
+    return 'high';
+  }
 }
 function getBrowserInfo() {
   return _getBrowserInfo.apply(this, arguments);
