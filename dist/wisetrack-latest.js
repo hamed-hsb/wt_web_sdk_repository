@@ -14766,7 +14766,7 @@ _defineProperty(ConstantsConfig, "session_interval", '6000');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '1.2.0-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.3.0-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -19497,7 +19497,7 @@ class VersionConfig {
 
     switch (type) {
       case PlatformType.WEB:
-        this.sdk_version = '0.2.0-alpha'
+        this.sdk_version = '0.3.0-alpha'
         this.sdk_version_code = '20'
         this.sdk_hash_Build = '1450c8e6a0dd1076c22fd3d8445712bfa4c3d9575430f8ecf32aa788551603fb'
         this.sdk_platform = 'web'
