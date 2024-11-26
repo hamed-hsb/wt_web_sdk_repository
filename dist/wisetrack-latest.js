@@ -241,6 +241,7 @@ var _Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promi
   displayWidth?: string,
   displayHeight?: string,
   screenDensity?: string,
+  displaySize?: string,
   screenSize?: string,
   webEngine?: string,
   uiMode?: string,
@@ -14936,7 +14937,7 @@ function getScreenDensity() {
     return 'Very High';
   }
 }
-function getScreenSizeInches() {
+function getDisplaySizeInches() {
   var screenWidth = window.screen.width;
   var screenHeight = window.screen.height;
   var pixelRatio = window.devicePixelRatio;
@@ -15338,12 +15339,15 @@ function getDeviceManufacturer() {
   var manufacturer = result.device.vendor || null;
   return manufacturer;
 }
+function getScreenColorDepth() {
+  return window.screen.colorDepth;
+}
 function getBrowserInfo() {
   return _getBrowserInfo.apply(this, arguments);
 }
 function _getBrowserInfo() {
   _getBrowserInfo = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-    var os_name, os_arch, device_type, cpu_type, cpu_lpc, device_name, device_manufacturer, screen_type, ui_mode, ui_style, browser_name, browser_version, browser_platform, session_storage_enabled, session_storage, indexed_db_enabled, local_storage_enabled, local_storage, web_gl_support, web_gl_fingerprint, wout_width, wout_height, display_width, display_height, screen_density, screen_size, web_engine, user_agent;
+    var os_name, os_arch, device_type, cpu_type, cpu_lpc, device_name, device_manufacturer, screen_type, ui_mode, ui_style, browser_name, browser_version, browser_platform, session_storage_enabled, session_storage, indexed_db_enabled, local_storage_enabled, local_storage, web_gl_support, web_gl_fingerprint, wout_width, wout_height, display_width, display_height, screen_density, screen_size, display_size, web_engine, user_agent;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -15372,8 +15376,9 @@ function _getBrowserInfo() {
             wout_height = getWindowOuterHeight();
             display_width = getDisplayWidth();
             display_height = getDisplayHeight();
-            screen_density = getScreenSizeInches(); // Get screen size in inches
+            screen_density = getScreenColorDepth();
             screen_size = getScreenDensity(); // Get screen density category
+            display_size = getDisplaySizeInches(); // Get screen size in inches
             web_engine = getWebEngine();
             user_agent = getUserAgent();
             return _context.abrupt("return", {
@@ -15400,6 +15405,7 @@ function _getBrowserInfo() {
               wout_height: wout_height,
               display_width: display_width,
               display_height: display_height,
+              display_size: display_size,
               screen_density: screen_density,
               screen_size: screen_size,
               web_engine: web_engine,
@@ -15407,7 +15413,7 @@ function _getBrowserInfo() {
               ui_style: ui_style,
               user_agent: user_agent
             });
-          case 29:
+          case 30:
           case "end":
             return _context.stop();
         }
@@ -15540,7 +15546,12 @@ function _getDisplayHeight() {
 }
 function _getScreenDensity() {
   return {
-    screenDensity: getScreenSizeInches()
+    screenDensity: getScreenColorDepth()
+  };
+}
+function _getDisplaySize() {
+  return {
+    displaySize: getDisplaySizeInches() || 'hamded'
   };
 }
 function _getScreenSizeInches() {
@@ -15559,7 +15570,7 @@ function _getUserAgent() {
   };
 }
 function defaultDeviceParams() /*: Promise<DeviceParamsT>*/{
-  return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, _getOSName()), _getOSArch()), _getDeviceType()), _getCpuArchitecture()), _getCpuLpc()), _getDeviceName()), _getDeviceManufacturer()), _getScreenType()), _getUIMode()), _getUIStyle()), _getBrowserName()), _getBrowserVersion()), _getSessionStorageStatus()), _getSessionStorageSize()), _getIndexedDBSupport()), _getLocalStorageStatus()), _getLocalStorageSize()), _getWebGLSupport()), _getWebGLFingerprintHash()), _getWindowOuterWidth()), _getWindowOuterHeight()), _getDisplayWidth()), _getDisplayHeight()), _getScreenDensity()), _getScreenSizeInches()), _getWebEngine()), _getUserAgent());
+  return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, _getOSName()), _getOSArch()), _getDeviceType()), _getCpuArchitecture()), _getCpuLpc()), _getDeviceName()), _getDeviceManufacturer()), _getScreenType()), _getUIMode()), _getUIStyle()), _getBrowserName()), _getBrowserVersion()), _getSessionStorageStatus()), _getSessionStorageSize()), _getIndexedDBSupport()), _getLocalStorageStatus()), _getLocalStorageSize()), _getWebGLSupport()), _getWebGLFingerprintHash()), _getWindowOuterWidth()), _getWindowOuterHeight()), _getDisplayWidth()), _getDisplayHeight()), _getDisplaySize()), _getScreenDensity()), _getScreenSizeInches()), _getWebEngine()), _getUserAgent());
 }
 ;// CONCATENATED MODULE: ./src/sdk/http.js
 
