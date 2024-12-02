@@ -70,7 +70,8 @@ var _Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promi
   partnerParams?: ?GlobalKeyValueParamsT
 |}*/
 /*:: export type SdkClickRequestParamsT = {|
-  clickTime: string,
+  installedAt: string,
+  recentlyOpen: string,
   source: string,
   referrer: string
 |}*/
@@ -183,8 +184,8 @@ var _Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promi
 /*:: export type CreatedAtT = {|
   createdAt: string
 |}*/
-/*:: export type SentAtT = {|
-  sentAt: string
+/*:: export type UpdatedAtT = {|
+  updatedAt: string
 |}*/
 /*:: export type WebUuidT = {|
   androidUuid: string
@@ -246,7 +247,8 @@ var _Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promi
   webEngine?: string,
   uiMode?: string,
   uiStyle?: string,
-  userAgent?: string,
+  webUserAgent?: string,
+  screenFormat?: string
 |}*/
 /*:: export type DefaultParamsT = {|
   ...CreatedAtT,
@@ -11417,7 +11419,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.2.0-alpha" || 0,
+  version: "0.4.0-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14767,7 +14769,7 @@ _defineProperty(ConstantsConfig, "session_interval", '6000');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.3.0-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.4.0-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -14776,7 +14778,7 @@ _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 
 var default_params_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
 /*:: // 
-import { type NavigatorT, type CreatedAtT, type SentAtT, type WebUuidT, type TrackEnabledT, type PlatformT, type LanguageT, type MachineTypeT, type QueueSizeT, type DefaultParamsT } from './types';*/
+import { type NavigatorT, type CreatedAtT, type UpdatedAtT, type WebUuidT, type TrackEnabledT, type PlatformT, type LanguageT, type MachineTypeT, type QueueSizeT, type DefaultParamsT } from './types';*/
 
 
 
@@ -14797,12 +14799,12 @@ function _getCreatedAt() /*: CreatedAtT*/{
 /**
  * Get sent at timestamp
  *
- * @returns {{sentAt: string}}
+ * @returns {{updatedAtT: string}}
  * @private
  */
-function _getSentAt() /*: SentAtT*/{
+function _getupdatedAtT() /*: UpdatedAtT*/{
   return {
-    sentAt: getTimestamp()
+    updatedAt: getTimestamp()
   };
 }
 
@@ -14861,8 +14863,12 @@ function _getNeedsResponseDetails() /*: NeedsResponseDetailsT*/{
   };
 }
 function _getReferrer() /*: ReferrerParamsT*/{
+  var result = localStorage.getItem('referrer_key');
+  if (result === null || result === undefined || result === 'undefined') {
+    result = 'utm_source=other&utm_medium=organic';
+  }
   return {
-    referrer: 'utm_source=other&utm_medium=organic'
+    referrer: result
   };
 }
 
@@ -14912,7 +14918,7 @@ function _getQueueSize() /*: Promise<QueueSizeT>*/{
 }
 function defaultParams() /*: Promise<DefaultParamsT>*/{
   return _getQueueSize().then(function (queueSize) {
-    return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, _getCreatedAt()), _getSentAt()), _getWebUuid()), _getTrackEnabled()), _getPlatform()), _getNeedsResponseDetails()), _getReferrer()), _getLanguage()), _getMachineType()), queueSize);
+    return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, _getCreatedAt()), _getupdatedAtT()), _getWebUuid()), _getTrackEnabled()), _getPlatform()), _getNeedsResponseDetails()), _getReferrer()), _getLanguage()), _getMachineType()), queueSize);
   });
 }
 ;// CONCATENATED MODULE: ./src/sdk/device_infos.js
@@ -14975,6 +14981,17 @@ function getOSArch() {
   } else {
     return 'Unknown architecture';
   }
+}
+function getScreenFormat() {
+  var screenWidth = window.screen.width;
+  var screenHeight = window.screen.height;
+  var ppi = 160;
+  var screenDiagonalPixels = Math.sqrt(Math.pow(screenWidth, 2) + Math.pow(screenHeight, 2));
+  var screenDiagonalInches = screenDiagonalPixels / ppi;
+  var aspectRatio = screenWidth / screenHeight;
+  var ratio = screenDiagonalInches / aspectRatio;
+  var screenFormat = ratio > 7 ? 'long' : 'normal';
+  return screenFormat;
 }
 function getUIMode() {
   var userAgent = navigator.userAgent.toLowerCase();
@@ -15354,7 +15371,7 @@ function getBrowserInfo() {
 }
 function _getBrowserInfo() {
   _getBrowserInfo = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-    var os_name, os_arch, device_type, cpu_type, cpu_lpc, device_name, device_manufacturer, screen_type, ui_mode, ui_style, browser_name, browser_version, browser_platform, session_storage_enabled, session_storage, indexed_db_enabled, local_storage_enabled, local_storage, web_gl_support, web_gl_fingerprint, wout_width, wout_height, display_width, display_height, screen_density, screen_size, display_size, web_engine, user_agent;
+    var os_name, os_arch, device_type, cpu_type, cpu_lpc, device_name, device_manufacturer, screen_type, ui_mode, ui_style, browser_name, browser_version, browser_platform, session_storage_enabled, session_storage, indexed_db_enabled, local_storage_enabled, local_storage, web_gl_support, web_gl_fingerprint, wout_width, wout_height, display_width, display_height, screen_density, screen_size, display_size, web_engine, user_agent, screen_format;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -15388,6 +15405,7 @@ function _getBrowserInfo() {
             display_size = getDisplaySizeInches(); // Get screen size in inches
             web_engine = getWebEngine();
             user_agent = getUserAgent();
+            screen_format = getScreenFormat();
             return _context.abrupt("return", {
               os_name: os_name,
               os_arch: os_arch,
@@ -15418,9 +15436,10 @@ function _getBrowserInfo() {
               web_engine: web_engine,
               ui_mode: ui_mode,
               ui_style: ui_style,
-              user_agent: user_agent
+              user_agent: user_agent,
+              screen_format: screen_format
             });
-          case 30:
+          case 31:
           case "end":
             return _context.stop();
         }
@@ -15573,11 +15592,16 @@ function _getWebEngine() {
 }
 function _getUserAgent() {
   return {
-    userAgent: getUserAgent()
+    webUserAgent: getUserAgent()
+  };
+}
+function _getScreenFormat() {
+  return {
+    screenFormat: getScreenFormat()
   };
 }
 function defaultDeviceParams() /*: Promise<DeviceParamsT>*/{
-  return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, _getOSName()), _getOSArch()), _getDeviceType()), _getCpuArchitecture()), _getCpuLpc()), _getDeviceName()), _getDeviceManufacturer()), _getScreenType()), _getUIMode()), _getUIStyle()), _getBrowserName()), _getBrowserVersion()), _getSessionStorageStatus()), _getSessionStorageSize()), _getIndexedDBSupport()), _getLocalStorageStatus()), _getLocalStorageSize()), _getWebGLSupport()), _getWebGLFingerprintHash()), _getWindowOuterWidth()), _getWindowOuterHeight()), _getDisplayWidth()), _getDisplayHeight()), _getDisplaySize()), _getScreenDensity()), _getScreenSizeInches()), _getWebEngine()), _getUserAgent());
+  return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, _getOSName()), _getOSArch()), _getDeviceType()), _getCpuArchitecture()), _getCpuLpc()), _getDeviceName()), _getDeviceManufacturer()), _getScreenType()), _getUIMode()), _getUIStyle()), _getBrowserName()), _getBrowserVersion()), _getSessionStorageStatus()), _getSessionStorageSize()), _getIndexedDBSupport()), _getLocalStorageStatus()), _getLocalStorageSize()), _getWebGLSupport()), _getWebGLFingerprintHash()), _getWindowOuterWidth()), _getWindowOuterHeight()), _getDisplayWidth()), _getDisplayHeight()), _getDisplaySize()), _getScreenDensity()), _getScreenSizeInches()), _getWebEngine()), _getUserAgent()), _getScreenFormat());
 }
 ;// CONCATENATED MODULE: ./src/sdk/http.js
 
@@ -16190,21 +16214,20 @@ import { type HttpSuccessResponseT, type HttpErrorResponseT, type HttpContinueCb
 
 
 
-
 /*:: type RequestConfigT = {|
   url?: UrlT,
-  method?: MethodT,
-  params?: RequestParamsT,
-  continueCb?: HttpContinueCbT,
-  strategy?: BackOffStrategyT,
-  wait?: ?WaitT
-|}*/
+    method ?: MethodT,
+    params ?: RequestParamsT,
+    continueCb ?: HttpContinueCbT,
+    strategy ?: BackOffStrategyT,
+    wait ?: ? WaitT
+      |}*/
 /*:: type DefaultConfigT = {|
   url?: UrlT,
-  method: MethodT,
-  params?: RequestParamsT,
-  continueCb?: HttpContinueCbT
-|}*/
+    method: MethodT,
+      params ?: RequestParamsT,
+      continueCb ?: HttpContinueCbT
+        |}*/
 /*:: type AttemptsT = number*/
 /*:: type StartAtT = number*/
 var DEFAULT_ATTEMPTS /*: AttemptsT*/ = 0;
@@ -16441,12 +16464,8 @@ var Request = function Request() {
     }
     logger.log("".concat(retrying ? 'Re-trying' : 'Trying', " request ").concat(_url, " in ").concat(_wait, "ms"));
     _startAt = Date.now();
-
-    //TODO()
-    _getBaseUrl(_baseUrlsIteratorCurrent.value, _url);
-    _url = constants_configs.sessions;
     return _preRequest({
-      endpoint: constants_configs.base_url,
+      endpoint: _getBaseUrl(_baseUrlsIteratorCurrent.value, _url),
       url: _url,
       method: _method,
       params: _objectSpread2({
@@ -17664,11 +17683,10 @@ function _stopTimer() /*: void*/{
  */
 function _prepareParams(_ref /*:: */) /*: SessionRequestParamsT*/{
   var callbackParams = _ref /*:: */.callbackParams,
-    partnerParams = _ref /*:: */.partnerParams,
-    referrer = _ref /*:: */.referrer;
-  console.log('referrer ->', referrer);
+    partnerParams = _ref /*:: */.partnerParams;
+  var referrer = localStorage.getItem('referrer_key');
   return {
-    referrer: 'utm_source=other&utm_medium=organic',
+    referrer: referrer,
     callbackParams: callbackParams.length ? convertToMap(callbackParams) : null,
     partnerParams: partnerParams.length ? convertToMap(partnerParams) : null
   };
@@ -17680,12 +17698,11 @@ function _prepareParams(_ref /*:: */) /*: SessionRequestParamsT*/{
  * @private
  */
 function _trackSession() /*: Promise<mixed>*/{
-  var referrer = 'utm_source=other&utm_medium=organic';
   return get().then(function (globalParams) {
     push({
       url: constants_configs.sessions,
       method: 'POST',
-      params: _prepareParams(globalParams, referrer)
+      params: _prepareParams(globalParams)
     }, {
       auto: true
     });
@@ -18298,6 +18315,9 @@ import { type SdkClickRequestParamsT } from './types';*/
 
 
 
+var default_utm = 'utm_source=other&utm_medium=organic';
+var referrer_key = 'referrer_key';
+
 /**
  * Check the following:
  * - redirected from somewhere other then client's website
@@ -18319,10 +18339,11 @@ function sdk_click_getReferrer() /*: ?string*/{
  * @returns {Object}
  * @private
  */
-function sdk_click_prepareParams(referrer) /*: SdkClickRequestParamsT*/{
+function sdk_click_prepareParams(referrer, recently_open) /*: SdkClickRequestParamsT*/{
   return {
-    clickTime: getTimestamp(),
+    installedAt: getTimestamp(),
     source: 'web_referrer',
+    recentlyOpen: recently_open,
     referrer: decodeURIComponent(referrer)
   };
 }
@@ -18332,16 +18353,29 @@ function sdk_click_prepareParams(referrer) /*: SdkClickRequestParamsT*/{
  */
 function sdkClick(manualReferrer /*: string*/, timestamp /*: number*/) /*: void*/{
   var referrer;
+  var recently_open = '0';
   if (manualReferrer) {
     referrer = manualReferrer;
   } else {
     referrer = sdk_click_getReferrer();
+    if (referrer == null || referrer == undefined || referrer == 'undefined') {
+      referrer = default_utm;
+    }
   }
+  if (referrer !== default_utm) {
+    referrer = default_utm + '&' + referrer;
+  }
+  if (localStorage.getItem(referrer_key) == null) {
+    recently_open = '0';
+  } else {
+    recently_open = '1';
+  }
+  localStorage.setItem(referrer_key, decodeURIComponent(referrer));
   if (referrer) {
     push({
-      url: '/sdk_click',
+      url: constants_configs.sdk_clicks,
       method: 'POST',
-      params: sdk_click_prepareParams(referrer)
+      params: sdk_click_prepareParams(referrer, recently_open)
     }, {
       timestamp: timestamp
     });
@@ -19515,7 +19549,7 @@ class VersionConfig {
 
     switch (type) {
       case PlatformType.WEB:
-        this.sdk_version = '0.3.0-alpha'
+        this.sdk_version = '0.4.0-alpha'
         this.sdk_version_code = '20'
         this.sdk_hash_Build = '1450c8e6a0dd1076c22fd3d8445712bfa4c3d9575430f8ecf32aa788551603fb'
         this.sdk_platform = 'web'
@@ -19702,40 +19736,7 @@ var _smartBanner /*: ?SmartBanner*/ = null;
  */
 function initSdk() {
   return _initSdk.apply(this, arguments);
-} // async function callApi () {
-//   const url = 'https://config.wisetrack.io'  // Your API endpoint
-//   const body = {
-//     app_token: 'frRWtF9kmSXx',
-//     env: 'production',
-//     sdk_version: '1.5.7',
-//     sdk_hash:'82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
-//     sdk_platform: 'android_native'
-//   }
-//   try {
-//     // Step 1: Make the POST request
-//     const response = await fetch(url, {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(body), // Sending the body as JSON
-//     })
-//     // Step 2: Check if the response is successful
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! Status: ${response.status}`)
-//     }
-//     // Step 3: Parse the JSON response
-//     const responseData = await response.json()
-//     console.log('API Response:', responseData)
-//     // Step 4: Create a new Config instance with the response data
-//     const config = new ConstantsConfig(responseData.result)
-//     // Step 5: Log the populated Config object
-//     config.logConfig()
-//   } catch (error) {
-//     // Step 6: Handle errors (both network errors and API errors)
-//     console.error('API call failed:', error)
-//   }
-// }
+}
 /**
  * Get user's current attribution information
  *
