@@ -12403,6 +12403,7 @@ import { type UrlT, type ActivityStateMapT, type AttributionMapT, type CommonReq
 
 
 
+
 /**
  * Reference to the activity state
  *
@@ -12510,7 +12511,7 @@ function toBackground() /*: void*/{
  */
 function _getOffset() /*: number*/{
   var lastActive = _activityState.lastActive;
-  return Math.round(timePassed(lastActive, Date.now()));
+  return Math.round(timePassed(lastActive, Date.now()) / SECOND);
 }
 
 /**
@@ -12565,7 +12566,7 @@ function _getEventCount() /*: number*/{
 function _getLastInterval() /*: number*/{
   var lastActive = _activityState.lastActive;
   if (lastActive) {
-    return Math.round(timePassed(lastActive, Date.now()));
+    return Math.round(timePassed(lastActive, Date.now()) / SECOND);
   }
   return -1;
 }
@@ -17408,7 +17409,6 @@ import { type DocumentT, type HttpSuccessResponseT, type HttpErrorResponseT, typ
 
 
 
-
 /**
  * Flag to mark if session watch is already on
  *
@@ -17641,8 +17641,9 @@ function _checkSession() /*: Promise<mixed>*/{
   var activityState = activity_state.current;
   var lastInterval = activityState.lastInterval;
   var isEnqueued = activityState.sessionCount > 0;
-  var currentWindow = lastInterval * SECOND;
-  if (!isEnqueued || isEnqueued && currentWindow >= config.sessionWindow) {
+  var currentWindow = lastInterval;
+  console.log("isEnqueued : ".concat(isEnqueued, ",currentWindow : ").concat(currentWindow, " , Config.sessionWindow): ").concat(constants_configs.session_interval));
+  if (!isEnqueued || isEnqueued && currentWindow >= constants_configs.session_interval) {
     return _trackSession();
   }
 
