@@ -11346,7 +11346,15 @@ function intersection /*:: <T>*/() /*: Array<T>*/{
  */
 function isRequest(url /*: string*/, requestName /*: string*/) /*: boolean*/{
   var regex = new RegExp("\\/".concat(requestName, "(\\/.*|\\?.*){0,1}$"));
+  console.log("_Trace  regex.test:".concat(regex.test(url)));
   return regex.test(url);
+}
+function isRequestSession(url /*: string*/, requestName /*: string*/) /*: boolean*/{
+  if (url.toLowerCase().includes('session'.toLowerCase())) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 /**
@@ -11419,7 +11427,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.4.0-alpha" || 0,
+  version: "0.5.0-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -12395,7 +12403,6 @@ import { type UrlT, type ActivityStateMapT, type AttributionMapT, type CommonReq
 
 
 
-
 /**
  * Reference to the activity state
  *
@@ -12503,7 +12510,7 @@ function toBackground() /*: void*/{
  */
 function _getOffset() /*: number*/{
   var lastActive = _activityState.lastActive;
-  return Math.round(timePassed(lastActive, Date.now()) / SECOND);
+  return Math.round(timePassed(lastActive, Date.now()));
 }
 
 /**
@@ -12558,7 +12565,7 @@ function _getEventCount() /*: number*/{
 function _getLastInterval() /*: number*/{
   var lastActive = _activityState.lastActive;
   if (lastActive) {
-    return Math.round(timePassed(lastActive, Date.now()) / SECOND);
+    return Math.round(timePassed(lastActive, Date.now()));
   }
   return -1;
 }
@@ -12606,7 +12613,7 @@ function updateParams(url /*: string*/, auto /*: boolean*/) /*: void*/{
   var params = {};
   params.timeSpent = _getTimeSpent();
   params.sessionLength = _getSessionLength();
-  if (isRequest(url, 'session')) {
+  if (isRequestSession(url, 'session')) {
     params.sessionCount = _getSessionCount() + 1;
   }
   if (isRequest(url, 'event')) {
@@ -12700,7 +12707,7 @@ function getWebUUID() /*: string*/{
   }
   return _activityState.uuid;
 }
-var ActivityState = {
+var activity_state_ActivityState = {
   get current() {
     return currentGetter();
   },
@@ -12723,7 +12730,7 @@ var ActivityState = {
   getAttribution: getAttribution,
   getWebUUID: getWebUUID
 };
-/* harmony default export */ const activity_state = (ActivityState);
+/* harmony default export */ const activity_state = (activity_state_ActivityState);
 ;// CONCATENATED MODULE: ./src/sdk/pub-sub.js
 
 
@@ -14721,6 +14728,8 @@ function storage_init(dbName /*: string*/) /*: Promise<Storage>*/{
 var ConstantsConfig = /*#__PURE__*/function () {
   // Static properties
 
+  // second
+
   function ConstantsConfig() {
     var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     _classCallCheck(this, ConstantsConfig);
@@ -14765,11 +14774,11 @@ _defineProperty(ConstantsConfig, "sdk_secure", true);
 _defineProperty(ConstantsConfig, "app_settings", '/api/v1/app_settings');
 _defineProperty(ConstantsConfig, "sdk_enabled", false);
 _defineProperty(ConstantsConfig, "sentry_enabled", true);
-_defineProperty(ConstantsConfig, "session_interval", '6000');
+_defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.4.0-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.5.0-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -16107,99 +16116,6 @@ function listeners_destroy() /*: void*/{
   off(window, 'offline', _handleOffline);
 }
 
-;// CONCATENATED MODULE: ./src/sdk/url-strategy.ts
-
-var _endpointMap;
-
-
-
-var UrlStrategy;
-(function (UrlStrategy) {
-  UrlStrategy["Default"] = "default";
-  UrlStrategy["India"] = "india";
-  UrlStrategy["China"] = "china";
-})(UrlStrategy || (UrlStrategy = {}));
-var DataResidency;
-(function (DataResidency) {
-  DataResidency["EU"] = "EU";
-  DataResidency["TR"] = "TR";
-  DataResidency["US"] = "US";
-})(DataResidency || (DataResidency = {}));
-function incorrectOptionIgnoredMessage(higherPriority /*: string*/, lowerPriority /*: string*/) {
-  logger.warn("Both ".concat(higherPriority, " and ").concat(lowerPriority, " are set in config, ").concat(lowerPriority, " will be ignored"));
-}
-
-/**
- * Returns a map of base URLs or a list of endpoint names depending on SDK configuration
- */
-function getEndpointPreference() /*: BaseUrlsMap | EndpointName[]*/{
-  var _Config$getCustomConf = config.getCustomConfig(),
-    customUrl = _Config$getCustomConf.customUrl,
-    urlStrategy = _Config$getCustomConf.urlStrategy,
-    dataResidency = _Config$getCustomConf.dataResidency;
-  if (customUrl) {
-    // If custom URL is set then send all requests there
-    if (dataResidency || urlStrategy) {
-      incorrectOptionIgnoredMessage('customUrl', dataResidency ? 'dataResidency' : 'urlStrategy');
-    }
-    return {
-      app: customUrl,
-      gdpr: customUrl
-    };
-  }
-  if (dataResidency && urlStrategy) {
-    incorrectOptionIgnoredMessage('dataResidency', 'urlStrategy');
-  }
-  if (dataResidency) {
-    return [dataResidency];
-  }
-  if (urlStrategy === UrlStrategy.India) {
-    return [UrlStrategy.India, UrlStrategy.Default];
-  }
-  if (urlStrategy === UrlStrategy.China) {
-    return [UrlStrategy.China, UrlStrategy.Default];
-  }
-  return [UrlStrategy.Default, UrlStrategy.India, UrlStrategy.China];
-}
-var endpointMap /*: Record<UrlStrategy | DataResidency, BaseUrlsMap>*/ = (_endpointMap = {}, _defineProperty(_endpointMap, UrlStrategy.Default, ENDPOINTS["default"]), _defineProperty(_endpointMap, UrlStrategy.India, ENDPOINTS.india), _defineProperty(_endpointMap, UrlStrategy.China, ENDPOINTS.china), _defineProperty(_endpointMap, DataResidency.EU, ENDPOINTS.EU), _defineProperty(_endpointMap, DataResidency.TR, ENDPOINTS.TR), _defineProperty(_endpointMap, DataResidency.US, ENDPOINTS.US), _endpointMap);
-function getPreferredUrls(endpoints /*: Partial<Record<UrlStrategy, BaseUrlsMap>>*/) /*: BaseUrlsMap[]*/{
-  var preference = getEndpointPreference();
-  if (!Array.isArray(preference)) {
-    return [preference];
-  } else {
-    var res = preference.map(function (strategy) {
-      return endpoints[strategy] || null;
-    }).filter(function (i) {
-      return (/*: i is BaseUrlsMap*/!!i
-      );
-    });
-    return res;
-  }
-}
-function getBaseUrlsIterator() /*: BaseUrlsIterator*/{
-  var endpoints /*: Partial<Record<UrlStrategy | DataResidency, BaseUrlsMap>>*/ = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : endpointMap;
-  var _urls = getPreferredUrls(endpoints);
-  var _counter = 0;
-  return {
-    next: function next() {
-      if (_counter < _urls.length) {
-        return {
-          value: _urls[_counter++],
-          done: false
-        };
-      } else {
-        return {
-          value: undefined,
-          done: true
-        };
-      }
-    },
-    reset: function reset() {
-      _counter = 0;
-    }
-  };
-}
-
 ;// CONCATENATED MODULE: ./src/sdk/request.js
 
 
@@ -16213,6 +16129,7 @@ import { type HttpSuccessResponseT, type HttpErrorResponseT, type HttpContinueCb
 
 
 
+//import { getBaseUrlsIterator, BaseUrlsIterator, BaseUrlsMap } from './url-strategy'
 
 /*:: type RequestConfigT = {|
   url?: UrlT,
@@ -16305,23 +16222,23 @@ var Request = function Request() {
   /**
    * Current base urls map to send request
    */
-  var _baseUrlsIteratorCurrent /*: { value: BaseUrlsMap, done: boolean }*/;
+  //let _baseUrlsIteratorCurrent: { value: BaseUrlsMap, done: boolean }
 
   /**
    * Reset iterator state and get the first endpoint to use it in the next try
    */
-  var _resetBaseUrlsIterator = function _resetBaseUrlsIterator() {
-    _baseUrlsIterator.reset();
-    _baseUrlsIteratorCurrent = _baseUrlsIterator.next();
-  };
+  // const _resetBaseUrlsIterator = () => {
+  //   _baseUrlsIterator.reset()
+  //   _baseUrlsIteratorCurrent = _baseUrlsIterator.next()
+  // }
 
   /**
    * Returns base url depending on request path
    */
-  var _getBaseUrl = function _getBaseUrl(urlsMap /*: BaseUrlsMap*/, url /*: UrlT*/) /*: string*/{
-    var base = url === '/gdpr_forget_device' ? 'gdpr' : 'app';
-    return urlsMap[base];
-  };
+  // const _getBaseUrl = (urlsMap: BaseUrlsMap, url: UrlT): string => {
+  //   const base = url === '/gdpr_forget_device' ? 'gdpr' : 'app'
+  //   return urlsMap[base]
+  // }
 
   /**
    * Timeout id to be used for clearing
@@ -16438,10 +16355,11 @@ var Request = function Request() {
   function _prepareRequest(_ref3 /*:: */) /*: Promise<HttpSuccessResponseT | HttpErrorResponseT>*/{
     var wait = _ref3 /*:: */.wait,
       retrying = _ref3 /*:: */.retrying;
-    if (!_baseUrlsIterator) {
-      _baseUrlsIterator = getBaseUrlsIterator();
-      _baseUrlsIteratorCurrent = _baseUrlsIterator.next();
-    }
+    // if (!_baseUrlsIterator) {
+    //   _baseUrlsIterator = getBaseUrlsIterator()
+    //   _baseUrlsIteratorCurrent = _baseUrlsIterator.next()
+    // }
+
     _wait = wait ? _prepareWait(wait) : _wait;
     if (_skip(wait)) {
       return request_Promise.resolve({
@@ -16464,8 +16382,10 @@ var Request = function Request() {
     }
     logger.log("".concat(retrying ? 'Re-trying' : 'Trying', " request ").concat(_url, " in ").concat(_wait, "ms"));
     _startAt = Date.now();
+
+    //_getBaseUrl(_baseUrlsIteratorCurrent.value, _url)
     return _preRequest({
-      endpoint: _getBaseUrl(_baseUrlsIteratorCurrent.value, _url),
+      endpoint: constants_configs.base_url,
       url: _url,
       method: _method,
       params: _objectSpread2({
@@ -16586,7 +16506,9 @@ var Request = function Request() {
       resolve(_retry(result.retry_in));
       return;
     }
-    _resetBaseUrlsIterator();
+
+    //_resetBaseUrlsIterator()
+
     if (typeof _continueCb === 'function') {
       _continueCb(result, _finish, _retry);
     } else {
@@ -16610,11 +16532,11 @@ var Request = function Request() {
 
         if (!nextEndpoint.done) {
           // next endpoint exists
-          _baseUrlsIteratorCurrent = nextEndpoint; // use the endpoint in the next try
+          //_baseUrlsIteratorCurrent = nextEndpoint // use the endpoint in the next try
           resolve(_retry(DEFAULT_WAIT));
         } else {
           // no more endpoints, seems there is no connection at all
-          _resetBaseUrlsIterator();
+          //_resetBaseUrlsIterator()
           resolve(_retry(NO_CONNECTION_WAIT));
         }
       } else {
@@ -16955,7 +16877,7 @@ function _isLive() {
  *
  * @returns {Promise}
  */
-function persist() /*: Promise<?ActivityStateMapT>*/{
+function identity_persist() /*: Promise<?ActivityStateMapT>*/{
   if (!_isLive()) {
     return identity_Promise.resolve(null);
   }
@@ -17131,11 +17053,11 @@ function _prepareTimestamp() /*: number*/{
  * @private
  */
 function _persist(url) /*: Promise<?ActivityStateMapT>*/{
-  if (isRequest(url, 'session')) {
+  if (isRequestSession(url, 'session')) {
     activity_state.resetSessionOffset();
   }
   activity_state.updateLastActive();
-  return persist();
+  return identity_persist();
 }
 
 /**
@@ -17592,7 +17514,7 @@ function _handleBackground() /*: Promise<mixed>*/{
   _stopTimer();
   activity_state.updateSessionOffset();
   activity_state.toBackground();
-  return persist();
+  return identity_persist();
 }
 
 /**
@@ -17646,7 +17568,7 @@ function _handleSessionRequestFinish(e /*: string*/, result /*: HttpSuccessRespo
   }
   activity_state.updateInstalled();
   publish('sdk:installed');
-  return persist();
+  return identity_persist();
 }
 
 /**
@@ -17660,7 +17582,7 @@ function _startTimer() /*: void*/{
   _stopTimer();
   _idInterval = setInterval(function () {
     activity_state.updateSessionOffset();
-    return persist();
+    return identity_persist();
   }, config.sessionTimerWindow);
 }
 
@@ -17723,8 +17645,10 @@ function _checkSession() /*: Promise<mixed>*/{
   if (!isEnqueued || isEnqueued && currentWindow >= config.sessionWindow) {
     return _trackSession();
   }
-  publish('attribution:check');
-  return persist();
+
+  // publish('attribution:check')
+
+  return identity_persist();
 }
 
 ;// CONCATENATED MODULE: ./src/sdk/attribution.js
@@ -17816,7 +17740,7 @@ function _setAttribution(result /*: HttpSuccessResponseT*/) /*: Promise<Attribut
   activity_state.current = _objectSpread2(_objectSpread2({}, activity_state.current), {}, {
     attribution: attribution
   });
-  return persist().then(function () {
+  return identity_persist().then(function () {
     publish('attribution:change', attribution);
     logger.info('Attribution has been updated');
     return {
@@ -17855,18 +17779,18 @@ function attribution_continue(result /*: HttpSuccessResponseT | HttpErrorRespons
  * @param {number=} sessionResult.ask_in
  */
 function check(sessionResult /*: HttpSuccessResponseT*/) /*: Promise<?ActivityStateMapT>*/{
-  var activityState = activity_state.current;
+  var activityState = ActivityState.current;
   var askIn = (sessionResult || {}).ask_in;
   if (!askIn && (activityState.attribution || !activityState.installed)) {
     return attribution_Promise.resolve(activityState);
   }
   attribution_request.send({
-    params: _objectSpread2({
+    params: _objectSpread({
       initiatedBy: !sessionResult ? 'sdk' : 'backend'
-    }, activity_state.getParams()),
+    }, ActivityState.getParams()),
     wait: askIn
   });
-  activity_state.updateSessionOffset();
+  ActivityState.updateSessionOffset();
   return persist();
 }
 
@@ -18996,7 +18920,7 @@ var url_strategy_Promise = typeof Promise === 'undefined' ? (__webpack_require__
   app: string;
   gdpr: string;
 }*/
-var url_strategy_UrlStrategy = /*#__PURE__*/function () {
+var UrlStrategy = /*#__PURE__*/function () {
   function UrlStrategy(preferredUrls /*: () => BaseUrlsMap[]*/) {
     _classCallCheck(this, UrlStrategy);
     this.preferredUrls /*:: */ = preferredUrls /*:: */;
@@ -19036,7 +18960,7 @@ var url_strategy_UrlStrategy = /*#__PURE__*/function () {
   }]);
   return UrlStrategy;
 }();
-_defineProperty(url_strategy_UrlStrategy, "NoPreferredUrlsDefinedError", new ReferenceError('UrlStrategy: No preferred URL defined'));
+_defineProperty(UrlStrategy, "NoPreferredUrlsDefinedError", new ReferenceError('UrlStrategy: No preferred URL defined'));
 ;// CONCATENATED MODULE: ./src/sdk/smart-banner/network/url-strategy/blocked-url-bypass.ts
 
 
@@ -19085,14 +19009,14 @@ var CustomUrl;
 ;// CONCATENATED MODULE: ./src/sdk/smart-banner/network/url-strategy/data-residency.ts
 
 
-var data_residency_DataResidency;
+var DataResidency;
 (function (_DataResidency) {
   var _endpoints;
   var EU = _DataResidency.EU = 'EU';
   var TR = _DataResidency.TR = 'TR';
   var US = _DataResidency.US = 'US';
   /*:: */
-  var endpoints /*:: */ = (_endpoints = {}, _defineProperty(_endpoints, data_residency_DataResidency.EU, ENDPOINTS.EU), _defineProperty(_endpoints, data_residency_DataResidency.TR, ENDPOINTS.TR), _defineProperty(_endpoints, data_residency_DataResidency.US, ENDPOINTS.US), _endpoints);
+  var endpoints /*:: */ = (_endpoints = {}, _defineProperty(_endpoints, DataResidency.EU, ENDPOINTS.EU), _defineProperty(_endpoints, DataResidency.TR, ENDPOINTS.TR), _defineProperty(_endpoints, DataResidency.US, ENDPOINTS.US), _endpoints);
   var getPreferredUrlsWithOption = function getPreferredUrlsWithOption(endpoints /*:: */, option /*:: */) {
     return [endpoints[option]];
   };
@@ -19103,7 +19027,7 @@ var data_residency_DataResidency;
     };
   }
   _DataResidency.preferredUrlsGetter = preferredUrlsGetter;
-})(data_residency_DataResidency || (data_residency_DataResidency = {}));
+})(DataResidency || (DataResidency = {}));
 ;// CONCATENATED MODULE: ./src/sdk/smart-banner/network/url-strategy/url-strategy-factory.ts
 
 
@@ -19136,14 +19060,14 @@ var UrlStrategyFactory;
       if (dataResidency || urlStrategy) {
         incorrectOptionIgnoredMessage('customUrl', dataResidency ? 'dataResidency' : 'urlStrategy');
       }
-      return new url_strategy_UrlStrategy(CustomUrl.preferredUrlsGetter(customUrl));
+      return new UrlStrategy(CustomUrl.preferredUrlsGetter(customUrl));
     } else if (dataResidency) {
       if (urlStrategy) {
         incorrectOptionIgnoredMessage('dataResidency', 'urlStrategy');
       }
-      return new url_strategy_UrlStrategy(data_residency_DataResidency.preferredUrlsGetter(dataResidency));
+      return new UrlStrategy(DataResidency.preferredUrlsGetter(dataResidency));
     } else {
-      return new url_strategy_UrlStrategy(BlockedUrlBypass.preferredUrlsGetter(urlStrategy));
+      return new UrlStrategy(BlockedUrlBypass.preferredUrlsGetter(urlStrategy));
     }
   }
   _UrlStrategyFactory.create = create;
@@ -19427,11 +19351,11 @@ function config_api_request_init() {
   constants_configs.HTTP_STATUS_CODE = 200;
   constants_configs.app_settings_enabled = false;
 }
-function callApi(_x, _x2, _x3, _x4, _x5) {
+function callApi(_x) {
   return _callApi.apply(this, arguments);
 }
 function _callApi() {
-  _callApi = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee(appToken, sdkVersion, sdkHash, sdkPlatform, sdkEnvirment) {
+  _callApi = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee(versionConfig) {
     var url, body, response, responseData, result, events, sessions, sdk_clicks, sdk_infos, attributions, pkg_info, app_settings, base_url, sdk_enabled, sentry_enabled, session_interval, sdk_update, force_update;
     return regeneratorRuntime_regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
@@ -19439,19 +19363,14 @@ function _callApi() {
           case 0:
             url = 'https://config.wisetrack.io'; // Your API endpoint
             config_api_request_init();
-            console.log('API appToken:', appToken);
-            console.log('API sdkVersion:', sdkVersion);
-            console.log('API sdkHash:', sdkHash);
-            console.log('API sdkPlatform:', sdkPlatform);
-            console.log('API sdkEnvirment:', sdkEnvirment);
             body = {
-              env: 'stage',
-              sdk_version: '1.5.7',
-              sdk_hash: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
-              sdk_platform: 'android_native'
+              env: versionConfig.sdkEnvirment,
+              sdk_version: versionConfig.sdkVersion,
+              sdk_hash: versionConfig.sdkHashBuild,
+              sdk_platform: versionConfig.sdkPlatform
             };
-            _context.prev = 8;
-            _context.next = 11;
+            _context.prev = 3;
+            _context.next = 6;
             return fetch(url, {
               method: 'POST',
               headers: {
@@ -19459,19 +19378,19 @@ function _callApi() {
               },
               body: JSON.stringify(body) // Sending the body as JSON
             });
-          case 11:
+          case 6:
             response = _context.sent;
             if (response.ok) {
-              _context.next = 16;
+              _context.next = 11;
               break;
             }
             constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
             constants_configs.HTTP_STATUS_CODE = response.status;
             throw new Error("HTTP error! Status: ".concat(response.status));
-          case 16:
-            _context.next = 18;
+          case 11:
+            _context.next = 13;
             return response.json();
-          case 18:
+          case 13:
             responseData = _context.sent;
             console.log('API Response:', responseData);
             if (responseData.success && responseData.result) {
@@ -19509,90 +19428,98 @@ function _callApi() {
               console.log('sdk_update :', sdk_update);
               console.log('force_update :', force_update);
             }
-            _context.next = 28;
+            _context.next = 23;
             break;
-          case 23:
-            _context.prev = 23;
-            _context.t0 = _context["catch"](8);
+          case 18:
+            _context.prev = 18;
+            _context.t0 = _context["catch"](3);
             constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
             constants_configs.HTTP_STATUS_CODE = 404;
             console.error('API call failed:', _context.t0);
-          case 28:
+          case 23:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[8, 23]]);
+    }, _callee, null, [[3, 18]]);
   }));
   return _callApi.apply(this, arguments);
 }
-;// CONCATENATED MODULE: ./src/sdk/version-config-js
-class VersionConfig {
-  constructor(type, env) {
-    this.sdk_version = null
-    this.sdk_version_code = null
-    this.sdk_hash_Build = null
-    this.sdk_platform = null
-    this.sdk_envirment = null
-
-    // Simulating BuildConfig constants (for this example, we'll use placeholders)
-    const BuildConfig = {
-      ENVIRMENT_PRODOCUTION: 'production',
-      WEB_SDK_VERSION: '1.0.0',
-      WEB_SDK_VERSION_CODE: '100',
-      PWA_SDK_VERSION: '2.0.0',
-      PWA_SDK_VERSION_CODE: '200',
-    };
-
-    // Constants object to hold the environment
-    const Constants = { ENVIRONMENT: '' }
-
-    switch (type) {
-      case PlatformType.WEB:
-        this.sdk_version = '0.4.0-alpha'
-        this.sdk_version_code = '20'
-        this.sdk_hash_Build = '1450c8e6a0dd1076c22fd3d8445712bfa4c3d9575430f8ecf32aa788551603fb'
-        this.sdk_platform = 'web'
-        this.sdk_envirment = 'debug'
-        Constants.ENVIRONMENT = 'debug'
-        break;
-
-      case PlatformType.PWA:
-        this.sdk_version = ''
-        this.sdk_version_code = ''
-        this.sdk_hash_Build = '' // Just an example hash
-        this.sdk_platform = 'pwa'
-        this.sdk_envirment = 'debug'
-        Constants.ENVIRONMENT = 'debug'
-        break;
-
-      default:
-        throw new Error('Unknown platform type');
-    }
+;// CONCATENATED MODULE: ./src/sdk/version-config.js
+function getConfig(platform, env) /*: VersionConfigParamsT*/{
+  switch (platform) {
+    case PlatformType.WEB:
+      switch (env) {
+        case EnvirmentType.DEBUG:
+          return {
+            sdkVersion: '1.5.7',
+            sdkVersionCode: '20',
+            sdkHashBuild: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
+            sdkPlatform: 'android_native',
+            sdkEnvirment: 'debug'
+          };
+        case EnvirmentType.STAGE:
+          return {
+            sdkVersion: '1.5.7',
+            sdkVersionCode: '20',
+            sdkHashBuild: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
+            sdkPlatform: 'android_native',
+            sdkEnvirment: 'stage'
+          };
+        case EnvirmentType.PRODUCTION:
+          return {
+            sdkVersion: '1.5.7',
+            sdkVersionCode: '20',
+            sdkHashBuild: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
+            sdkPlatform: 'android_native',
+            sdkEnvirment: 'production'
+          };
+      }
+      break;
+    case PlatformType.PWA:
+      this.sdk_version = '';
+      this.sdk_version_code = '';
+      this.sdk_hash_Build = '';
+      this.sdk_platform = 'pwa';
+      this.sdk_envirment = 'debug';
+      break;
+    default:
+      throw new Error('Unknown platform type');
   }
 }
-
+/*:: export type VersionConfigParamsT = {|
+  sdkVersion: string,
+  sdkVersionCode: string,
+  sdkHashBuild: string,
+  sdkPlatform: string,
+  sdkEnvirment: string,
+|}*/
 // Enum for EnvirmentType
-const EnvirmentType = {
-  PRODUCTION: { displayName: "production" },
-  STAGE: { displayName: "stage" },
-  DEBUG: { displayName: "debug" }
+var EnvirmentType = {
+  PRODUCTION: {
+    displayName: 'production'
+  },
+  STAGE: {
+    displayName: 'stage'
+  },
+  DEBUG: {
+    displayName: 'debug'
+  }
 };
 
 // Enum for PlatformType with only WEB and PWA
-const PlatformType = {
+var PlatformType = {
   WEB: 'WEB',
   PWA: 'PWA'
 };
 
-
-
-const version_config_js_config = new VersionConfig(PlatformType.WEB, EnvirmentType.PRODUCTION);
-console.log(version_config_js_config);
+// const config = new VersionConfig(PlatformType.WEB, EnvirmentType.PRODUCTION);
+// console.log(config);
 
 //Export the VersionConfig class and enums for use in other files
 //export { VersionConfig, PlatformType, EnvirmentType}
 ;// CONCATENATED MODULE: ./src/sdk/app-setting-api-request.js
+
 
 
 function callSettingsApi(_x) {
@@ -19600,56 +19527,59 @@ function callSettingsApi(_x) {
 }
 function _callSettingsApi() {
   _callSettingsApi = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee(appToken) {
-    var url, body, response, responseData, result, session_interval;
+    var url, body, response, responseData, result, session_interval, sessionInterval;
     return regeneratorRuntime_regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            url = 'https://core.debug.wisetrackdev.ir/api/v1/app_settings'; // Your API endpoint
-            console.log('*** Call App Setting Api ***');
-            console.log('API appToken:', appToken);
+            url = constants_configs.base_url + constants_configs.app_settings;
             body = {
-              app_token: 'frRWtF9kmSXx'
+              app_token: appToken
             };
-            _context.prev = 4;
-            _context.next = 7;
+            _context.prev = 2;
+            _context.next = 5;
             return fetch(url, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify(body) // Sending the body as JSON
+              body: JSON.stringify(body)
             });
-          case 7:
+          case 5:
             response = _context.sent;
             if (response.ok) {
-              _context.next = 10;
+              _context.next = 8;
               break;
             }
             throw new Error("HTTP error! Status: ".concat(response.status));
-          case 10:
-            _context.next = 12;
+          case 8:
+            _context.next = 10;
             return response.json();
-          case 12:
+          case 10:
             responseData = _context.sent;
-            console.log('API Response:', responseData);
             if (responseData.success && responseData.result) {
               result = responseData.result;
-              session_interval = result.session_interval; //const config = new ConstantsConfig(result)
-              console.log('session_interval---- :', session_interval);
+              session_interval = result.session_interval;
+              if (session_interval != null) {
+                sessionInterval = Number(session_interval);
+                sessionInterval = sessionInterval / 1000; // convert milis to second
+                constants_configs.session_interval = sessionInterval;
+              } else {
+                constants_configs.session_interval = '1800';
+              }
             }
-            _context.next = 20;
+            _context.next = 17;
             break;
-          case 17:
-            _context.prev = 17;
-            _context.t0 = _context["catch"](4);
+          case 14:
+            _context.prev = 14;
+            _context.t0 = _context["catch"](2);
             console.error('API call failed:', _context.t0);
-          case 20:
+          case 17:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[4, 17]]);
+    }, _callee, null, [[2, 14]]);
   }));
   return _callSettingsApi.apply(this, arguments);
 }
@@ -19759,53 +19689,52 @@ function _initSdk() {
             logger.setLogLevel(logLevel, logOutput);
             _context.prev = 2;
             CONFIG_API_RETRY = 0;
-            console.log(CONFIG_API_RETRY);
-            versionConfig = new VersionConfig(PlatformType.WEB, EnvirmentType.production);
-          case 6:
+            versionConfig = getConfig(PlatformType.WEB, EnvirmentType.STAGE);
+          case 5:
             if (!(CONFIG_API_RETRY <= 3)) {
-              _context.next = 16;
+              _context.next = 15;
               break;
             }
-            _context.next = 9;
-            return callApi('23sd4f5ANo', versionConfig.sdk_version, versionConfig.sdk_hash_Build, versionConfig.sdk_platform, versionConfig.sdk_envirment);
-          case 9:
+            _context.next = 8;
+            return callApi(versionConfig);
+          case 8:
             if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
-              _context.next = 11;
+              _context.next = 10;
               break;
             }
-            return _context.abrupt("break", 16);
-          case 11:
-            _context.next = 13;
+            return _context.abrupt("break", 15);
+          case 10:
+            _context.next = 12;
             return sleep(10000);
-          case 13:
+          case 12:
             CONFIG_API_RETRY++;
-            _context.next = 6;
+            _context.next = 5;
             break;
-          case 16:
+          case 15:
             if (!constants_configs.app_settings_enabled) {
-              _context.next = 19;
+              _context.next = 18;
               break;
             }
-            _context.next = 19;
-            return callSettingsApi('ksjflsjfjklfdas');
-          case 19:
+            _context.next = 18;
+            return callSettingsApi(options.appToken);
+          case 18:
             if (!constants_configs.sdk_enabled) {
-              _context.next = 27;
+              _context.next = 26;
               break;
             }
             if (!_isInitialised()) {
-              _context.next = 23;
+              _context.next = 22;
               break;
             }
             logger.error('You already initiated your instance');
             return _context.abrupt("return");
-          case 23:
+          case 22:
             if (!config.hasMissing(options)) {
-              _context.next = 25;
+              _context.next = 24;
               break;
             }
             return _context.abrupt("return");
-          case 25:
+          case 24:
             _isInitialising = true;
             storage.init(options.namespace).then(function (availableStorage) {
               if (availableStorage.type === STORAGE_TYPES.NO_STORAGE) {
@@ -19816,19 +19745,19 @@ function _initSdk() {
               main_options = _objectSpread2({}, options);
               _start(options);
             });
-          case 27:
-            _context.next = 32;
+          case 26:
+            _context.next = 31;
             break;
-          case 29:
-            _context.prev = 29;
+          case 28:
+            _context.prev = 28;
             _context.t0 = _context["catch"](2);
             logger.error('Error initializing SDK:', _context.t0);
-          case 32:
+          case 31:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[2, 29]]);
+    }, _callee, null, [[2, 28]]);
   }));
   return _initSdk.apply(this, arguments);
 }
@@ -20104,6 +20033,7 @@ function main_destroy() /*: void*/{
  * @private
  */
 function main_continue(activityState /*: ActivityStateMapT*/) /*: Promise<void>*/{
+  sleep(5000);
   logger.log("WiseTrack SDK is starting with web_uuid set to ".concat(activityState.uuid));
   var isInstalled = activity_state.current.installed;
   gdpr_forget_device_check();
@@ -20144,6 +20074,14 @@ function main_continue(activityState /*: ActivityStateMapT*/) /*: Promise<void>*
       _handleSdkInstalled();
       third_party_sharing_check();
     }
+  }).then(function () {
+    if (!activityState.sdkClickSent) {
+      WiseTrack.setReferrer('wisetrack-default-web-referrer');
+    }
+  }).then(function () {
+    // if (!activityState.attrSent) {
+    //   attributionCheck({ask_in: 3000})
+    // }
   });
 }
 
@@ -20208,13 +20146,16 @@ function _start(options /*: InitOptionsT*/) /*: void*/{
   });
   subscribe('sdk:gdpr-forget-me', _handleGdprForgetMe);
   subscribe('sdk:third-party-sharing-opt-out', third_party_sharing_finish);
-  subscribe('attribution:check', function (e, result) {
-    return check(result);
-  });
+  //subscribe('attribution:check', (e, result) => attributionCheck(result))
+
   if (typeof options.attributionCallback === 'function') {
     subscribe('attribution:change', options.attributionCallback);
   }
-  start().then(main_continue).then(sdkClick).catch(main_error);
+  sdkClick();
+  sleep(10000);
+  // _continue()
+
+  start().then(main_continue).catch(main_error);
 }
 function _internalTrackEvent(params /*: EventParamsT*/) {
   if (storage.getType() === STORAGE_TYPES.NO_STORAGE) {
