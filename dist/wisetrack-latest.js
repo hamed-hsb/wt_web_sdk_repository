@@ -12427,6 +12427,7 @@ var _started /*: boolean*/ = false;
  * @private
  */
 var _active /*: boolean*/ = false;
+var _newlyOpened /*: Boolean*/ = false;
 
 /**
  * Get current activity state
@@ -12453,6 +12454,7 @@ function currentSetter() {
  * @param {Object} params
  */
 function init(params /*: ActivityStateMapT*/) {
+  _newlyOpened = true;
   _started = true;
   currentSetter(params);
 }
@@ -12464,6 +12466,9 @@ function init(params /*: ActivityStateMapT*/) {
  */
 function isStarted() {
   return _started;
+}
+function isNewlyOpened() {
+  return _newlyOpened;
 }
 
 /**
@@ -12500,6 +12505,7 @@ function toForeground() /*: void*/{
  * Set active flag to false when going background
  */
 function toBackground() /*: void*/{
+  _newlyOpened = false;
   _active = false;
 }
 
@@ -12717,6 +12723,7 @@ var activity_state_ActivityState = {
   },
   init: init,
   isStarted: isStarted,
+  isNewlyOpened: isNewlyOpened,
   toForeground: toForeground,
   toBackground: toBackground,
   initParams: initParams,
@@ -17645,6 +17652,10 @@ function _checkSession() /*: Promise<mixed>*/{
   console.log("isEnqueued : ".concat(isEnqueued, ",currentWindow : ").concat(currentWindow, " , Config.sessionWindow): ").concat(constants_configs.session_interval));
   if (!isEnqueued || isEnqueued && currentWindow >= constants_configs.session_interval) {
     return _trackSession();
+  } else {
+    if (activity_state.isNewlyOpened()) {
+      return _trackSession();
+    }
   }
 
   // publish('attribution:check')
@@ -20034,7 +20045,6 @@ function main_destroy() /*: void*/{
  * @private
  */
 function main_continue(activityState /*: ActivityStateMapT*/) /*: Promise<void>*/{
-  sleep(5000);
   logger.log("WiseTrack SDK is starting with web_uuid set to ".concat(activityState.uuid));
   var isInstalled = activity_state.current.installed;
   gdpr_forget_device_check();
@@ -20134,29 +20144,48 @@ function main_error(error /*: CustomErrorT | Error*/) {
  * @param {Function=} options.attributionCallback
  * @private
  */
-function _start(options /*: InitOptionsT*/) /*: void*/{
-  if (disable_status() === 'off') {
-    logger.log('WiseTrack SDK is disabled, can not start the sdk');
-    return;
-  }
-  config.set(options);
-  register();
-  subscribe('sdk:installed', _handleSdkInstalled);
-  subscribe('sdk:shutdown', function () {
-    return _shutdown(true);
-  });
-  subscribe('sdk:gdpr-forget-me', _handleGdprForgetMe);
-  subscribe('sdk:third-party-sharing-opt-out', third_party_sharing_finish);
-  //subscribe('attribution:check', (e, result) => attributionCheck(result))
+function _start(_x) {
+  return _start2.apply(this, arguments);
+}
+function _start2() {
+  _start2 = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee2(options /*: InitOptionsT*/) {
+    return regeneratorRuntime_regeneratorRuntime().wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            if (!(disable_status() === 'off')) {
+              _context2.next = 3;
+              break;
+            }
+            logger.log('WiseTrack SDK is disabled, can not start the sdk');
+            return _context2.abrupt("return");
+          case 3:
+            config.set(options);
+            register();
+            subscribe('sdk:installed', _handleSdkInstalled);
+            subscribe('sdk:shutdown', function () {
+              return _shutdown(true);
+            });
+            subscribe('sdk:gdpr-forget-me', _handleGdprForgetMe);
+            subscribe('sdk:third-party-sharing-opt-out', third_party_sharing_finish);
+            //subscribe('attribution:check', (e, result) => attributionCheck(result))
 
-  if (typeof options.attributionCallback === 'function') {
-    subscribe('attribution:change', options.attributionCallback);
-  }
-  sdkClick();
-  sleep(10000);
-  // _continue()
-
-  start().then(main_continue).catch(main_error);
+            if (typeof options.attributionCallback === 'function') {
+              subscribe('attribution:change', options.attributionCallback);
+            }
+            sdkClick();
+            _context2.next = 13;
+            return sleep(8000);
+          case 13:
+            start().then(main_continue).catch(main_error);
+          case 14:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2);
+  }));
+  return _start2.apply(this, arguments);
 }
 function _internalTrackEvent(params /*: EventParamsT*/) {
   if (storage.getType() === STORAGE_TYPES.NO_STORAGE) {
