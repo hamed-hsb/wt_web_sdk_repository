@@ -213,6 +213,23 @@ var _Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promi
 /*:: export type QueueSizeT = {|
   queueSize: number
 |}*/
+/*:: export type PrimitiveConfigT = {|
+  eventUrl?: string,
+  sessionUrl ?: string,
+  sdkClickUrl ?: string,
+  sdkInfosUrl ?: string,
+  AttributionUrl ?: string,
+  packageInfoUrl ?: string,
+  appSettingUrl ?: string,
+  pageUrl ?: string,
+  baseUrl ?: string,
+  sdkSecure ?: boolean,
+  sdkEnabled ?: boolean,
+  sentryEnabled ?: boolean,
+  forceUpdate ?: boolean,
+  sdkUpdate ?: boolean,
+  sessionInterval ?: string
+|}*/
 /*:: export type SmartBannerOptionsT = {|
   webToken: string,
   logLevel: 'none' | 'error' | 'warning' | 'info' | 'verbose',
@@ -11356,6 +11373,13 @@ function isRequestSession(url /*: string*/, requestName /*: string*/) /*: boolea
     return false;
   }
 }
+function isRequestEvent(url /*: string*/, requestName /*: string*/) /*: boolean*/{
+  if (url.toLowerCase().includes('event'.toLowerCase())) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /**
  * Extract the host name for the url
@@ -11427,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.5.0-alpha" || 0,
+  version: "0.7.0-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -12427,7 +12451,22 @@ var _started /*: boolean*/ = false;
  * @private
  */
 var _active /*: boolean*/ = false;
+
+/**
+ * Opened flag, if site has been opened
+ * 
+ * @type {boolean}
+ * @private 
+ */
 var _newlyOpened /*: Boolean*/ = false;
+
+/**
+ * Refresh Web Site flag, if site has been refresh
+ * If set to true, it indicates that the website has been refreshed, otherwise, it's false.
+ * @type {boolean}
+ * @private 
+ */
+var _refreshWebSite /*: Boolean*/ = false;
 
 /**
  * Get current activity state
@@ -12457,8 +12496,17 @@ function init(params /*: ActivityStateMapT*/) {
   _newlyOpened = true;
   _started = true;
   currentSetter(params);
+  checkRefreshWebSite();
 }
-
+function checkRefreshWebSite() /*: Boolean*/{
+  // You can also check if it's the first time the page was opened in the session
+  if (sessionStorage.getItem('pageLoaded') === null) {
+    _refreshWebSite = false;
+    sessionStorage.setItem('pageLoaded', 'true');
+  } else {
+    _refreshWebSite = true;
+  }
+}
 /**
  * Check if activity state is started
  *
@@ -12467,8 +12515,23 @@ function init(params /*: ActivityStateMapT*/) {
 function isStarted() {
   return _started;
 }
+
+/**
+ * Check if site newly opened
+ * 
+ * @returns {boolean}
+ */
 function isNewlyOpened() {
   return _newlyOpened;
+}
+
+/**
+ * Check if site refresh
+ * 
+ * @returns {boolean}
+ */
+function isRefreshWebSite() {
+  return _refreshWebSite;
 }
 
 /**
@@ -12601,7 +12664,7 @@ function getParams(url /*: UrlT*/) /*: ?CommonRequestParams*/{
     sessionCount: _activityState.sessionCount || 1,
     lastInterval: lastInterval || 0
   };
-  if (url && isRequest(url, 'event')) {
+  if (url && isRequestEvent(url, 'event')) {
     baseParams.eventCount = _activityState.eventCount;
   }
   return baseParams;
@@ -12623,7 +12686,7 @@ function updateParams(url /*: string*/, auto /*: boolean*/) /*: void*/{
   if (isRequestSession(url, 'session')) {
     params.sessionCount = _getSessionCount() + 1;
   }
-  if (isRequest(url, 'event')) {
+  if (isRequestEvent(url, 'event')) {
     params.eventCount = _getEventCount() + 1;
   }
   _update(params);
@@ -12724,6 +12787,7 @@ var activity_state_ActivityState = {
   init: init,
   isStarted: isStarted,
   isNewlyOpened: isNewlyOpened,
+  isRefreshWebSite: isRefreshWebSite,
   toForeground: toForeground,
   toBackground: toBackground,
   initParams: initParams,
@@ -14767,8 +14831,8 @@ var ConstantsConfig = /*#__PURE__*/function () {
   }]);
   return ConstantsConfig;
 }();
-_defineProperty(ConstantsConfig, "events", '/api/v13/events');
-_defineProperty(ConstantsConfig, "sessions", '/api/v1555/sessions');
+_defineProperty(ConstantsConfig, "events", '/api/v1/events');
+_defineProperty(ConstantsConfig, "sessions", '/api/v1/sessions');
 _defineProperty(ConstantsConfig, "sdk_clicks", '/api/v1/sdk_clicks');
 _defineProperty(ConstantsConfig, "sdk_infos", '/api/v1/sdk_infos');
 _defineProperty(ConstantsConfig, "attributions", '/api/v1/attributions');
@@ -14786,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.5.0-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.7.0-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -15623,6 +15687,9 @@ function defaultDeviceParams() /*: Promise<DeviceParamsT>*/{
 ;// CONCATENATED MODULE: ./src/sdk/http.js
 
 
+
+
+var _excluded = ["eventToken", "partnerParams"];
 var http_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
 /*:: // 
 import { type UrlT, type DefaultParamsT, type HttpSuccessResponseT, type HttpErrorResponseT, type HttpRequestParamsT, type ErrorCodeT, type DeviceParamsT } from './types';*/
@@ -15724,6 +15791,30 @@ function _logKey(header /*: string*/, str /*: string*/) /*: string*/{
   }, '');
   return "".concat(str).concat(spaces, ":");
 }
+function transformParams(data) {
+  if (data.eventToken && _typeof(data.eventToken) === 'object') {
+    // If eventToken is an object, extract its properties and merge them into the root object
+    var _data$eventToken = data.eventToken,
+      eventToken = _data$eventToken.eventToken,
+      partnerParams = _data$eventToken.partnerParams,
+      eventTokenProps = _objectWithoutProperties(_data$eventToken, _excluded);
+
+    // Convert partnerParams to a string
+    var partnerParamsString = partnerParams ? JSON.stringify(partnerParams) : null;
+    return _objectSpread2(_objectSpread2(_objectSpread2({}, data), {}, {
+      eventToken: eventToken
+    }, eventTokenProps), {}, {
+      // Merge the other properties (deduplicationId, revenue, currency) into the root object
+      partnerParams: partnerParamsString // Convert partnerParams into a string
+    });
+  } else if (data.eventToken && typeof data.eventToken === 'string') {
+    // If eventToken is already a string, return the object as is
+    return data;
+  }
+
+  // Return the unchanged object if no eventToken found
+  return data;
+}
 
 /**
  * Encode key-value pairs to be used in url
@@ -15740,7 +15831,11 @@ function _encodeParams(params, defaultParams, defaultDeviceParams) {
       return "_".concat($1.toLowerCase());
     });
   };
-  var allParams = entries(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, config.getBaseParams()), defaultParams), params), defaultDeviceParams)).map(function (_ref3) {
+  console.log(params);
+  console.log(defaultParams);
+  console.log(defaultDeviceParams);
+  var dataParams = transformParams(params);
+  var allParams = entries(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, config.getBaseParams()), defaultParams), dataParams), defaultDeviceParams)).map(function (_ref3) {
     var _ref4 = _slicedToArray(_ref3, 2),
       key = _ref4[0],
       value = _ref4[1];
@@ -15809,7 +15904,7 @@ function _handleReadyStateChange(reject, resolve, _ref11 /*:: */) {
  * @returns {{encodedParams: string, fullUrl: string}}
  * @private
  */
-function _prepareUrlAndParams(_ref12 /*:: */, defaultParams /*: DefaultParamsT*/, defaultDeviceParams /*: DefaultParamsT*/) /*: {fullUrl: string, encodedParams: string}*/{
+function _prepareUrlAndParams(_ref12 /*:: */, defaultParams /*: DefaultParamsT*/, defaultDeviceParams /*: DefaultParamsT*/) /*: { fullUrl: string, encodedParams: string }*/{
   var endpoint = _ref12 /*:: */.endpoint,
     url = _ref12 /*:: */.url,
     method = _ref12 /*:: */.method,
@@ -17654,7 +17749,9 @@ function _checkSession() /*: Promise<mixed>*/{
     return _trackSession();
   } else {
     if (activity_state.isNewlyOpened()) {
-      return _trackSession();
+      if (!activity_state.isRefreshWebSite()) {
+        return _trackSession();
+      }
     }
   }
 
@@ -18087,6 +18184,7 @@ import { type EventParamsT, type EventRequestParamsT, type GlobalParamsMapT, typ
 
 
 
+
 /*:: type RevenueT = {
   revenue: string,
   currency: string
@@ -18229,9 +18327,10 @@ function event_event(params /*: EventParamsT*/, timestamp /*: number*/) /*: Prom
     logger.error(reason);
     return event_Promise.reject(reason);
   }
+  console.log("event url::  ".concat(constants_configs.events));
   return _checkEventDeduplicationId(params.deduplicationId).then(get).then(function (globalParams) {
     return push({
-      url: '/event',
+      url: constants_configs.events,
       method: 'POST',
       params: event_prepareParams(params, globalParams)
     }, {
@@ -19353,36 +19452,68 @@ var SmartBanner = /*#__PURE__*/function () {
 
 
 
+
+var url = 'https://config.wisetrack.io';
+var body;
 var isInitialized = false;
+var first_launch_key = 'first_launch_key';
+var sdk_configs_key = 'sdk_configs_key';
+var config_api_request_config /*: PrimitiveConfigT*/;
 
 // Function to initialize the configuration or any setup tasks
 function config_api_request_init() {
+  initI();
   if (isInitialized) return;
   isInitialized = true;
   constants_configs.CONFIG_API_HTTP_ERROR_STATUS = false;
   constants_configs.HTTP_STATUS_CODE = 200;
   constants_configs.app_settings_enabled = false;
 }
-function callApi(_x) {
-  return _callApi.apply(this, arguments);
+function initI() {
+  if (isFirstLaunch()) {
+    localStorage.setItem(sdk_configs_key, JSON.stringify(initDefaultConfig));
+    localStorage.setItem(first_launch_key, true);
+  }
 }
-function _callApi() {
-  _callApi = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee(versionConfig) {
-    var url, body, response, responseData, result, events, sessions, sdk_clicks, sdk_infos, attributions, pkg_info, app_settings, base_url, sdk_enabled, sentry_enabled, session_interval, sdk_update, force_update;
+function initDefaultConfig() /*: PrimitiveConfigT*/{
+  return {
+    eventUrl: '/api/v13/events',
+    sessionUrl: '/api/v1555/sessions',
+    sdkClickUrl: '/api/v1/sdk_clicks',
+    sdkInfosUrl: '/api/v1/sdk_infos',
+    AttributionUrl: '/api/v1/attributions',
+    packageInfoUrl: '/api/v1/package-info',
+    appSettingUrl: '/api/v1/app_settings',
+    pageUrl: '/api/v1/pages',
+    baseUrl: 'https://core.wisetrack.io',
+    sdkSecure: true,
+    sdkEnabled: false,
+    sentryEnabled: true,
+    forceUpdate: false,
+    sdkUpdate: false,
+    sessionInterval: '1800' // second
+  };
+}
+
+function isFirstLaunch() /*: Boolean*/{
+  if (localStorage.getItem(first_launch_key) == null) {
+    return true;
+  } else {
+    return false;
+  }
+}
+function sendRequest() {
+  return _sendRequest.apply(this, arguments);
+}
+function _sendRequest() {
+  _sendRequest = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee() {
+    var response, responseData;
     return regeneratorRuntime_regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            url = 'https://config.wisetrack.io'; // Your API endpoint
-            config_api_request_init();
-            body = {
-              env: versionConfig.sdkEnvirment,
-              sdk_version: versionConfig.sdkVersion,
-              sdk_hash: versionConfig.sdkHashBuild,
-              sdk_platform: versionConfig.sdkPlatform
-            };
-            _context.prev = 3;
-            _context.next = 6;
+            _context.prev = 0;
+            _context.next = 3;
             return fetch(url, {
               method: 'POST',
               headers: {
@@ -19390,72 +19521,132 @@ function _callApi() {
               },
               body: JSON.stringify(body) // Sending the body as JSON
             });
-          case 6:
+          case 3:
             response = _context.sent;
-            if (response.ok) {
-              _context.next = 11;
-              break;
+            // Step 2: Check if the response is successful
+            if (!response.ok) {
+              error(response.status);
             }
-            constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
-            constants_configs.HTTP_STATUS_CODE = response.status;
-            throw new Error("HTTP error! Status: ".concat(response.status));
-          case 11:
-            _context.next = 13;
+
+            // Step 3: Parse the JSON response
+            _context.next = 7;
             return response.json();
-          case 13:
+          case 7:
             responseData = _context.sent;
             console.log('API Response:', responseData);
             if (responseData.success && responseData.result) {
-              result = responseData.result;
-              events = result.events, sessions = result.sessions, sdk_clicks = result.sdk_clicks, sdk_infos = result.sdk_infos, attributions = result.attributions, pkg_info = result.pkg_info, app_settings = result.app_settings, base_url = result.base_url, sdk_enabled = result.sdk_enabled, sentry_enabled = result.sentry_enabled, session_interval = result.session_interval, sdk_update = result.sdk_update, force_update = result.force_update;
-              if (app_settings.length > 0) {
-                constants_configs.app_settings_enabled = true;
-              }
-              //const config = new ConstantsConfig(result)
-
-              constants_configs.events = events;
-              constants_configs.sessions = sessions;
-              constants_configs.sdk_clicks = sdk_clicks;
-              constants_configs.sdk_infos = sdk_infos;
-              constants_configs.attributions = attributions;
-              constants_configs.pkg_info = pkg_info;
-              constants_configs.app_settings = app_settings;
-              constants_configs.base_url = base_url;
-              constants_configs.sdk_enabled = sdk_enabled;
-              constants_configs.sentry_enabled = sentry_enabled;
-              constants_configs.session_interval = session_interval;
-              constants_configs.sdk_update = sdk_update;
-              constants_configs.force_update = force_update;
-              console.log('events :', events);
-              console.log('sessions :', sessions);
-              console.log('sdk_clicks :', sdk_clicks);
-              console.log('sdk_infos :', sdk_infos);
-              console.log('attributions :', attributions);
-              console.log('pkg_info :', pkg_info);
-              console.log('app_settings :', app_settings);
-              console.log('base_url :', base_url);
-              console.log('sdk_enabled :', sdk_enabled);
-              console.log('sentry_enabled :', sentry_enabled);
-              console.log('session_interval :', session_interval);
-              console.log('sdk_update :', sdk_update);
-              console.log('force_update :', force_update);
+              success(responseData);
             }
-            _context.next = 23;
+            _context.next = 17;
             break;
-          case 18:
-            _context.prev = 18;
-            _context.t0 = _context["catch"](3);
+          case 12:
+            _context.prev = 12;
+            _context.t0 = _context["catch"](0);
             constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
             constants_configs.HTTP_STATUS_CODE = 404;
             console.error('API call failed:', _context.t0);
-          case 23:
+          case 17:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[3, 18]]);
+    }, _callee, null, [[0, 12]]);
   }));
-  return _callApi.apply(this, arguments);
+  return _sendRequest.apply(this, arguments);
+}
+function config_api_request_parser(result) {
+  var events = result.events,
+    sessions = result.sessions,
+    sdk_clicks = result.sdk_clicks,
+    sdk_infos = result.sdk_infos,
+    attributions = result.attributions,
+    pkg_info = result.pkg_info,
+    app_settings = result.app_settings,
+    base_url = result.base_url,
+    sdk_enabled = result.sdk_enabled,
+    sentry_enabled = result.sentry_enabled,
+    session_interval = result.session_interval,
+    sdk_update = result.sdk_update,
+    force_update = result.force_update;
+  if (app_settings.length > 0) {
+    constants_configs.app_settings_enabled = true;
+  }
+  config_api_request_config = {
+    eventUrl: events,
+    sessionUrl: sessions,
+    sdkClickUrl: sdk_clicks,
+    sdkInfosUrl: sdk_infos,
+    AttributionUrl: attributions,
+    packageInfoUrl: pkg_info,
+    appSettingUrl: app_settings,
+    pageUrl: '/api/v1/pages',
+    baseUrl: base_url,
+    sdkSecure: true,
+    sdkEnabled: sdk_enabled,
+    sentryEnabled: sentry_enabled,
+    forceUpdate: force_update,
+    sdkUpdate: sdk_update,
+    sessionInterval: session_interval // milisecond, but convert to second
+  };
+
+  localStorage.setItem(sdk_configs_key, JSON.stringify(config_api_request_config));
+}
+function success(responseData) {
+  config_api_request_parser(responseData.result);
+  setConfigs();
+}
+function error(status) {
+  constants_configs.CONFIG_API_HTTP_ERROR_STATUS = true;
+  constants_configs.HTTP_STATUS_CODE = status;
+  setConfigs();
+  throw new Error("HTTP error! Status: ".concat(status));
+}
+function setConfigs() {
+  var storedConfig = localStorage.getItem(sdk_configs_key);
+  if (storedConfig) {
+    var parsedConfig /*: PrimitiveConfigT*/ = JSON.parse(storedConfig);
+    constants_configs.events = parsedConfig.eventUrl;
+    constants_configs.sessions = parsedConfig.sessionUrl;
+    constants_configs.sdk_clicks = parsedConfig.sdkClickUrl;
+    constants_configs.sdk_infos = parsedConfig.sdkInfosUrl;
+    constants_configs.attributions = parsedConfig.attributions;
+    constants_configs.pkg_info = parsedConfig.packageInfoUrl;
+    constants_configs.app_settings = parsedConfig.appSettingUrl;
+    constants_configs.base_url = parsedConfig.baseUrl;
+    constants_configs.sdk_enabled = parsedConfig.sdkEnabled;
+    constants_configs.sentry_enabled = parsedConfig.sentryEnabled;
+    constants_configs.session_interval = parsedConfig.sessionInterval;
+    constants_configs.sdk_update = parsedConfig.sdkUpdate;
+    constants_configs.force_update = parsedConfig.forceUpdate;
+    console.log(parsedConfig);
+  }
+}
+function sendConfig(_x) {
+  return _sendConfig.apply(this, arguments);
+}
+function _sendConfig() {
+  _sendConfig = asyncToGenerator_asyncToGenerator( /*#__PURE__*/regeneratorRuntime_regeneratorRuntime().mark(function _callee2(versionConfig) {
+    return regeneratorRuntime_regeneratorRuntime().wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            config_api_request_init();
+            body = {
+              env: versionConfig.sdkEnvirment,
+              sdk_version: versionConfig.sdkVersion,
+              sdk_hash: versionConfig.sdkHashBuild,
+              sdk_platform: versionConfig.sdkPlatform
+            };
+            _context2.next = 4;
+            return sendRequest();
+          case 4:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2);
+  }));
+  return _sendConfig.apply(this, arguments);
 }
 ;// CONCATENATED MODULE: ./src/sdk/version-config.js
 function getConfig(platform, env) /*: VersionConfigParamsT*/{
@@ -19595,15 +19786,48 @@ function _callSettingsApi() {
   }));
   return _callSettingsApi.apply(this, arguments);
 }
+;// CONCATENATED MODULE: ./src/sdk/currency-enum.js
+var CurrencyEnum = Object.freeze({
+  USD: 'USD',
+  EUR: 'EUR',
+  JPY: 'JPY',
+  GBP: 'GBP',
+  AUD: 'AUD',
+  CAD: 'CAD',
+  CHF: 'CHF',
+  CNY: 'CNY',
+  SEK: 'SEK',
+  NZD: 'NZD',
+  MXN: 'MXN',
+  SGD: 'SGD',
+  HKD: 'HKD',
+  NOK: 'NOK',
+  KRW: 'KRW',
+  TRY: 'TRY',
+  RUB: 'RUB',
+  INR: 'INR',
+  BRL: 'BRL',
+  ZAR: 'ZAR',
+  IRR: 'IRR',
+  AED: 'AED',
+  IQD: 'IQD',
+  SAR: 'SAR',
+  OMR: 'OMR',
+  BTC: 'BTC',
+  EHT: 'EHT',
+  LTC: 'LTC'
+});
+/* harmony default export */ const currency_enum = (CurrencyEnum);
 ;// CONCATENATED MODULE: ./src/sdk/main.js
 
 
 
 
-var _excluded = ["logLevel", "logOutput"];
+var main_excluded = ["logLevel", "logOutput"];
 var main_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
 /*:: // 
 import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalParamsT, type CustomErrorT, type ActivityStateMapT, type SmartBannerOptionsT, type AttributionMapT } from './types';*/
+
 
 
 
@@ -19697,7 +19921,7 @@ function _initSdk() {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, _excluded);
+            _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, main_excluded);
             logger.setLogLevel(logLevel, logOutput);
             _context.prev = 2;
             CONFIG_API_RETRY = 0;
@@ -19708,7 +19932,7 @@ function _initSdk() {
               break;
             }
             _context.next = 8;
-            return callApi(versionConfig);
+            return sendConfig(versionConfig);
           case 8:
             if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
               _context.next = 10;
@@ -20078,6 +20302,26 @@ function main_continue(activityState /*: ActivityStateMapT*/) /*: Promise<void>*
   run({
     cleanUp: true
   });
+  var openSiteEventConfig = {
+    eventToken: 'RVwWQTdA',
+    deduplicationId: '36985',
+    revenue: 50.000,
+    currency: currency_enum.AED,
+    // callbackParams: [
+    //   {key: 'YOUR_KEY_1', value: 'YOUR_VALUE_1'},
+    //   {key: 'YOUR_KEY_2', value: 'YOUR_VALUE_2'}
+    // ],
+    partnerParams: {
+      'test_key_1': 'test_value_1',
+      'test_key_2': 'test_value_2',
+      'test_key_3': 'test_value_3',
+      'test_key_4': 'test_value_4',
+      'test_key_5': 'test_value_5'
+    }
+  };
+  trackEvent({
+    eventToken: openSiteEventConfig
+  });
   return watch().then(function () {
     _isInitialising = false;
     _isStarted = true;
@@ -20173,7 +20417,9 @@ function _start2() {
             if (typeof options.attributionCallback === 'function') {
               subscribe('attribution:change', options.attributionCallback);
             }
-            sdkClick();
+            if (!main_checkRefreshWebSite()) {
+              sdkClick();
+            }
             _context2.next = 13;
             return sleep(8000);
           case 13:
@@ -20207,7 +20453,10 @@ function _internalTrackEvent(params /*: EventParamsT*/) {
     var _callback = function _callback(timestamp) {
       return resolve(event_event(params, timestamp));
     };
-    if (!_isInstalled || !_isStarted && _isInitialised()) {
+    logger.log('Running track event is delayed until WiseTrack SDK is _isInstalled ', _isInstalled);
+    logger.log('Running track event is delayed until WiseTrack SDK is _isStarted ', _isStarted);
+    logger.log('Running track event is delayed until WiseTrack SDK is _isInitialised ', _isInitialised());
+    if (_isInstalled || _isStarted && _isInitialised()) {
       delay(_callback, 'track event');
       logger.log('Running track event is delayed until WiseTrack SDK is up');
     } else {
@@ -20259,10 +20508,29 @@ function _restartAfterAsyncEnable() {
     _start(main_options);
   }
 }
+
+/**
+ * Pauses the execution of code for a specified duration.
+ * 
+ * This function returns a Promise that resolves after the specified number of milliseconds (ms).
+ * It can be used with `await` to introduce a delay in asynchronous code execution.
+ *
+ * @param {number} ms - The time to wait in milliseconds before the Promise resolves.
+ * @returns 
+ */
 function sleep(ms) {
   return new main_Promise(function (resolve) {
     return setTimeout(resolve, ms);
   });
+}
+function main_checkRefreshWebSite() /*: Boolean*/{
+  // You can also check if it's the first time the page was opened in the session
+  if (sessionStorage.getItem('pageLoaded_sdk_click') === null) {
+    sessionStorage.setItem('pageLoaded_sdk_click', 'true');
+    return false;
+  } else {
+    return true;
+  }
 }
 var WiseTrack = {
   initSdk: initSdk,
