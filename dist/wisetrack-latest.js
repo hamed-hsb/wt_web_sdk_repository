@@ -11451,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.8.1-alpha" || 0,
+  version: "0.8.2-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14850,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.8.1-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.8.2-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -19786,38 +19786,6 @@ function _callSettingsApi() {
   }));
   return _callSettingsApi.apply(this, arguments);
 }
-;// CONCATENATED MODULE: ./src/sdk/currency-enum.js
-var CurrencyEnum = Object.freeze({
-  USD: 'USD',
-  EUR: 'EUR',
-  JPY: 'JPY',
-  GBP: 'GBP',
-  AUD: 'AUD',
-  CAD: 'CAD',
-  CHF: 'CHF',
-  CNY: 'CNY',
-  SEK: 'SEK',
-  NZD: 'NZD',
-  MXN: 'MXN',
-  SGD: 'SGD',
-  HKD: 'HKD',
-  NOK: 'NOK',
-  KRW: 'KRW',
-  TRY: 'TRY',
-  RUB: 'RUB',
-  INR: 'INR',
-  BRL: 'BRL',
-  ZAR: 'ZAR',
-  IRR: 'IRR',
-  AED: 'AED',
-  IQD: 'IQD',
-  SAR: 'SAR',
-  OMR: 'OMR',
-  BTC: 'BTC',
-  EHT: 'EHT',
-  LTC: 'LTC'
-});
-/* harmony default export */ const currency_enum = (CurrencyEnum);
 ;// CONCATENATED MODULE: ./src/sdk/main.js
 
 
@@ -19827,7 +19795,6 @@ var main_excluded = ["logLevel", "logOutput"];
 var main_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
 /*:: // 
 import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalParamsT, type CustomErrorT, type ActivityStateMapT, type SmartBannerOptionsT, type AttributionMapT } from './types';*/
-
 
 
 
@@ -20302,26 +20269,6 @@ function main_continue(activityState /*: ActivityStateMapT*/) /*: Promise<void>*
   run({
     cleanUp: true
   });
-  var openSiteEventConfig = {
-    eventToken: 'RVwWQTdA',
-    deduplicationId: '36985',
-    revenue: 50.000,
-    currency: currency_enum.AED,
-    // callbackParams: [
-    //   {key: 'YOUR_KEY_1', value: 'YOUR_VALUE_1'},
-    //   {key: 'YOUR_KEY_2', value: 'YOUR_VALUE_2'}
-    // ],
-    partnerParams: {
-      'test_key_1': 'test_value_1',
-      'test_key_2': 'test_value_2',
-      'test_key_3': 'test_value_3',
-      'test_key_4': 'test_value_4',
-      'test_key_5': 'test_value_5'
-    }
-  };
-  trackEvent({
-    eventToken: openSiteEventConfig
-  });
   return watch().then(function () {
     _isInitialising = false;
     _isStarted = true;
@@ -20453,9 +20400,6 @@ function _internalTrackEvent(params /*: EventParamsT*/) {
     var _callback = function _callback(timestamp) {
       return resolve(event_event(params, timestamp));
     };
-    console.log('Running track event is delayed until WiseTrack SDK is _isInstalled ', _isInstalled);
-    console.log('Running track event is delayed until WiseTrack SDK is _isStarted ', _isStarted);
-    console.log('Running track event is delayed until WiseTrack SDK is _isInitialised ', _isInitialised());
     if (!_isInstalled || !_isStarted && _isInitialised()) {
       _callback();
     } else {
