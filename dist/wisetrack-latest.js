@@ -20456,7 +20456,7 @@ function _internalTrackEvent(params /*: EventParamsT*/) {
     logger.log('Running track event is delayed until WiseTrack SDK is _isInstalled ', _isInstalled);
     logger.log('Running track event is delayed until WiseTrack SDK is _isStarted ', _isStarted);
     logger.log('Running track event is delayed until WiseTrack SDK is _isInitialised ', _isInitialised());
-    if (_isInstalled || _isStarted && _isInitialised()) {
+    if (!_isInstalled || !_isStarted && _isInitialised()) {
       delay(_callback, 'track event');
       logger.log('Running track event is delayed until WiseTrack SDK is up');
     } else {
