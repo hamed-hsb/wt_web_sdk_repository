@@ -19786,38 +19786,6 @@ function _callSettingsApi() {
   }));
   return _callSettingsApi.apply(this, arguments);
 }
-;// CONCATENATED MODULE: ./src/sdk/currency-enum.js
-var CurrencyEnum = Object.freeze({
-  USD: 'USD',
-  EUR: 'EUR',
-  JPY: 'JPY',
-  GBP: 'GBP',
-  AUD: 'AUD',
-  CAD: 'CAD',
-  CHF: 'CHF',
-  CNY: 'CNY',
-  SEK: 'SEK',
-  NZD: 'NZD',
-  MXN: 'MXN',
-  SGD: 'SGD',
-  HKD: 'HKD',
-  NOK: 'NOK',
-  KRW: 'KRW',
-  TRY: 'TRY',
-  RUB: 'RUB',
-  INR: 'INR',
-  BRL: 'BRL',
-  ZAR: 'ZAR',
-  IRR: 'IRR',
-  AED: 'AED',
-  IQD: 'IQD',
-  SAR: 'SAR',
-  OMR: 'OMR',
-  BTC: 'BTC',
-  EHT: 'EHT',
-  LTC: 'LTC'
-});
-/* harmony default export */ const currency_enum = (CurrencyEnum);
 ;// CONCATENATED MODULE: ./src/sdk/main.js
 
 
@@ -19827,7 +19795,6 @@ var main_excluded = ["logLevel", "logOutput"];
 var main_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
 /*:: // 
 import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalParamsT, type CustomErrorT, type ActivityStateMapT, type SmartBannerOptionsT, type AttributionMapT } from './types';*/
-
 
 
 
@@ -20033,6 +20000,7 @@ function setReferrer(referrer /*: string*/) {
  * @param {Object} params
  */
 function trackEvent(params /*: EventParamsT*/) /*: Promise<void>*/{
+  console.log('->   trackEvent');
   return _internalTrackEvent(params);
 }
 
@@ -20302,26 +20270,29 @@ function main_continue(activityState /*: ActivityStateMapT*/) /*: Promise<void>*
   run({
     cleanUp: true
   });
-  var openSiteEventConfig = {
-    eventToken: 'RVwWQTdA',
-    deduplicationId: '36985',
-    revenue: 50.000,
-    currency: currency_enum.AED,
-    // callbackParams: [
-    //   {key: 'YOUR_KEY_1', value: 'YOUR_VALUE_1'},
-    //   {key: 'YOUR_KEY_2', value: 'YOUR_VALUE_2'}
-    // ],
-    partnerParams: {
-      'test_key_1': 'test_value_1',
-      'test_key_2': 'test_value_2',
-      'test_key_3': 'test_value_3',
-      'test_key_4': 'test_value_4',
-      'test_key_5': 'test_value_5'
-    }
-  };
-  trackEvent({
-    eventToken: openSiteEventConfig
-  });
+
+  // const openSiteEventConfig = {
+  //   eventToken: 'RVwWQTdA',
+  //    deduplicationId: '36985',
+  //    revenue: 50.000,
+  //    currency: CurrencyEnum.AED,
+  //   // callbackParams: [
+  //   //   {key: 'YOUR_KEY_1', value: 'YOUR_VALUE_1'},
+  //   //   {key: 'YOUR_KEY_2', value: 'YOUR_VALUE_2'}
+  //   // ],
+  //    partnerParams: {
+  //      'test_key_1': 'test_value_1',
+  //      'test_key_2': 'test_value_2',
+  //      'test_key_3': 'test_value_3',
+  //      'test_key_4': 'test_value_4',
+  //      'test_key_5': 'test_value_5',
+  //    }
+  // }
+
+  // trackEvent({
+  //   eventToken: openSiteEventConfig
+  // })
+
   return watch().then(function () {
     _isInitialising = false;
     _isStarted = true;
@@ -20434,6 +20405,7 @@ function _start2() {
   return _start2.apply(this, arguments);
 }
 function _internalTrackEvent(params /*: EventParamsT*/) {
+  console.log('->   _internalTrackEvent');
   if (storage.getType() === STORAGE_TYPES.NO_STORAGE) {
     var reason = 'WiseTrack SDK can not track event, no storage available';
     logger.log(reason);
@@ -20457,9 +20429,11 @@ function _internalTrackEvent(params /*: EventParamsT*/) {
     logger.log('Running track event is delayed until WiseTrack SDK is _isStarted ', _isStarted);
     logger.log('Running track event is delayed until WiseTrack SDK is _isInitialised ', _isInitialised());
     if (!_isInstalled || !_isStarted && _isInitialised()) {
+      console.log('->   if');
       delay(_callback, 'track event');
       logger.log('Running track event is delayed until WiseTrack SDK is up');
     } else {
+      console.log('->   else');
       _callback();
     }
   });
