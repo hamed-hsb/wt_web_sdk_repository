@@ -12777,7 +12777,7 @@ function getWebUUID() /*: string*/{
   }
   return _activityState.uuid;
 }
-var activity_state_ActivityState = {
+var ActivityState = {
   get current() {
     return currentGetter();
   },
@@ -12802,7 +12802,7 @@ var activity_state_ActivityState = {
   getAttribution: getAttribution,
   getWebUUID: getWebUUID
 };
-/* harmony default export */ const activity_state = (activity_state_ActivityState);
+/* harmony default export */ const activity_state = (ActivityState);
 ;// CONCATENATED MODULE: ./src/sdk/pub-sub.js
 
 
@@ -16473,6 +16473,7 @@ var request_Request = function Request() {
         code: 'SKIP'
       });
     }
+    console.log('att get _url ', _url);
     if (!_url) {
       sdk_logger.error('You must define url for the request to be sent');
       return request_Promise.reject({
@@ -16980,7 +16981,7 @@ function _isLive() {
  *
  * @returns {Promise}
  */
-function identity_persist() /*: Promise<?ActivityStateMapT>*/{
+function persist() /*: Promise<?ActivityStateMapT>*/{
   if (!_isLive()) {
     return identity_Promise.resolve(null);
   }
@@ -17160,7 +17161,7 @@ function _persist(url) /*: Promise<?ActivityStateMapT>*/{
     activity_state.resetSessionOffset();
   }
   activity_state.updateLastActive();
-  return identity_persist();
+  return persist();
 }
 
 /**
@@ -17493,10 +17494,181 @@ function global_params_clear() /*: void*/{
   return storage.clear(global_params_storeName);
 }
 
+;// CONCATENATED MODULE: ./src/sdk/attribution.js
+
+
+var attribution_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
+/*:: // 
+import { type HttpSuccessResponseT, type HttpErrorResponseT, type HttpFinishCbT, type HttpRetryCbT, type AttributionStateT, type AttributionWhiteListT, type AttributionMapT } from './types';*/
+
+
+
+
+
+
+
+
+
+
+/**
+ * Http request instance
+ *
+ * @type {Object}
+ * @private
+ */
+var attribution_request = request({
+  url: '/attribution',
+  strategy: 'short',
+  continueCb: attribution_continue
+});
+
+/**
+ * List of valid attribution parameters
+ *
+ * @type {string[]}
+ * @private
+ */
+var _whitelist /*: AttributionWhiteListT*/ = ['tracker_token', 'tracker_name', 'network', 'campaign', 'adgroup', 'creative', 'click_label', 'state'];
+
+/**
+ * Check if new attribution is the same as old one
+ *
+ * @param {string} adid
+ * @param {Object=} attribution
+ * @returns {boolean}
+ * @private
+ */
+function _isSame(_ref /*:: */) /*: boolean*/{
+  var adid = _ref /*:: */.adid,
+    attribution = _ref /*:: */.attribution;
+  var oldAttribution = activity_state.current.attribution || {};
+  var anyDifferent = attribution && _whitelist.some(function (k) {
+    return oldAttribution[k] !== attribution[k];
+  });
+  return !anyDifferent && adid === oldAttribution.adid;
+}
+
+/**
+ * Check if attribution result is valid
+ *
+ * @param {string} adid
+ * @param {Object=} attribution
+ * @returns {boolean}
+ * @private
+ */
+function _isValid(_ref2 /*:: */) /*: boolean*/{
+  var _ref2$adid = _ref2 /*:: */.adid,
+    adid = _ref2$adid === void 0 ? '' : _ref2$adid,
+    _ref2$attribution = _ref2 /*:: */.attribution,
+    attribution = _ref2$attribution === void 0 ? {} : _ref2$attribution;
+  return !!adid && !!intersection(_whitelist, Object.keys(attribution)).length;
+}
+
+/**
+ * Update attribution and initiate client's callback
+ *
+ * @param {Object} result
+ * @private
+ */
+function _setAttribution(result /*: HttpSuccessResponseT*/) /*: Promise<AttributionStateT>*/{
+  if (isEmpty(result) || !_isValid(result) || _isSame(result)) {
+    return attribution_Promise.resolve({
+      state: 'same'
+    });
+  }
+  var attribution /*: AttributionMapT*/ = entries(result.attribution).filter(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 1),
+      key = _ref4[0];
+    return _whitelist.indexOf(key) !== -1;
+  }).reduce(reducer, {
+    adid: result.adid
+  });
+  activity_state.current = _objectSpread2(_objectSpread2({}, activity_state.current), {}, {
+    attribution: attribution
+  });
+  return persist().then(function () {
+    publish('attribution:change', attribution);
+    sdk_logger.info('Attribution has been updated');
+    return {
+      state: 'changed'
+    };
+  });
+}
+
+/**
+ * Store attribution or make another request if attribution not yet available
+ *
+ * @param {Object} result
+ * @param {Function} finish
+ * @param {Function} retry
+ * @returns {Promise}
+ * @private
+ */
+function attribution_continue(result /*: HttpSuccessResponseT | HttpErrorResponseT*/, finish /*: HttpFinishCbT*/, retry /*: HttpRetryCbT*/) /*: Promise<HttpSuccessResponseT | HttpErrorResponseT | AttributionStateT>*/{
+  if (!result || result && result.status === 'error') {
+    finish();
+    return attribution_Promise.resolve({
+      state: 'unknown'
+    });
+  }
+  if (!result.ask_in) {
+    finish();
+    return _setAttribution(result);
+  }
+  return retry(result.ask_in);
+}
+
+/**
+ * Request attribution if session asked for it
+ *
+ * @param {Object=} sessionResult
+ * @param {number=} sessionResult.ask_in
+ */
+function check(sessionResult /*: HttpSuccessResponseT*/) /*: Promise<mixed>*/{
+  var activityState = activity_state.current;
+  var askIn = (sessionResult || {}).ask_in;
+  console.log('check attribution 0000');
+  if (!askIn && (activityState.attribution || !activityState.installed)) {
+    return attribution_Promise.resolve(activityState);
+  }
+  console.log('check attribution');
+
+  // _request.send({
+  //   params: {
+  //     initiatedBy: !sessionResult ? 'sdk' : 'backend',
+  //     ...ActivityState.getParams()
+  //   },
+  //   wait: askIn
+  // })
+
+  activity_state.updateSessionOffset();
+  console.log('att', constants_configs.attributions);
+  return get().then(function (globalParams) {
+    console.log('configls', globalParams);
+    push({
+      url: constants_configs.attributions,
+      method: 'POST',
+      params: activity_state.getParams()
+    }, {
+      auto: true
+    });
+  });
+
+  // return persist()
+}
+
+/**
+ * Destroy attribution by clearing running request
+ */
+function attribution_destroy() /*: void*/{
+  attribution_request.clear();
+}
+
 ;// CONCATENATED MODULE: ./src/sdk/session.js
 var session_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
 /*:: // 
 import { type DocumentT, type HttpSuccessResponseT, type HttpErrorResponseT, type GlobalParamsMapT, type SessionRequestParamsT } from './types';*/
+
 
 
 
@@ -17616,7 +17788,7 @@ function _handleBackground() /*: Promise<mixed>*/{
   _stopTimer();
   activity_state.updateSessionOffset();
   activity_state.toBackground();
-  return identity_persist();
+  return persist();
 }
 
 /**
@@ -17670,7 +17842,7 @@ function _handleSessionRequestFinish(e /*: string*/, result /*: HttpSuccessRespo
   }
   activity_state.updateInstalled();
   publish('sdk:installed');
-  return identity_persist();
+  return persist();
 }
 
 /**
@@ -17684,7 +17856,7 @@ function _startTimer() /*: void*/{
   _stopTimer();
   _idInterval = setInterval(function () {
     activity_state.updateSessionOffset();
-    return identity_persist();
+    return persist();
   }, config.sessionTimerWindow);
 }
 
@@ -17744,7 +17916,6 @@ function _checkSession() /*: Promise<mixed>*/{
   var lastInterval = activityState.lastInterval;
   var isEnqueued = activityState.sessionCount > 0;
   var currentWindow = lastInterval;
-  console.log("isEnqueued : ".concat(isEnqueued, ",currentWindow : ").concat(currentWindow, " , Config.sessionWindow): ").concat(constants_configs.session_interval));
   if (!isEnqueued || isEnqueued && currentWindow >= constants_configs.session_interval) {
     return _trackSession();
   } else {
@@ -17754,160 +17925,11 @@ function _checkSession() /*: Promise<mixed>*/{
       }
     }
   }
-
-  // publish('attribution:check')
-
-  return identity_persist();
-}
-
-;// CONCATENATED MODULE: ./src/sdk/attribution.js
-
-
-var attribution_Promise = typeof Promise === 'undefined' ? (__webpack_require__(2702).Promise) : Promise;
-/*:: // 
-import { type HttpSuccessResponseT, type HttpErrorResponseT, type HttpFinishCbT, type HttpRetryCbT, type AttributionStateT, type AttributionWhiteListT, type ActivityStateMapT, type AttributionMapT } from './types';*/
-
-
-
-
-
-
-
-/**
- * Http request instance
- *
- * @type {Object}
- * @private
- */
-var attribution_request = request({
-  url: '/attribution',
-  strategy: 'short',
-  continueCb: attribution_continue
-});
-
-/**
- * List of valid attribution parameters
- *
- * @type {string[]}
- * @private
- */
-var _whitelist /*: AttributionWhiteListT*/ = ['tracker_token', 'tracker_name', 'network', 'campaign', 'adgroup', 'creative', 'click_label', 'state'];
-
-/**
- * Check if new attribution is the same as old one
- *
- * @param {string} adid
- * @param {Object=} attribution
- * @returns {boolean}
- * @private
- */
-function _isSame(_ref /*:: */) /*: boolean*/{
-  var adid = _ref /*:: */.adid,
-    attribution = _ref /*:: */.attribution;
-  var oldAttribution = activity_state.current.attribution || {};
-  var anyDifferent = attribution && _whitelist.some(function (k) {
-    return oldAttribution[k] !== attribution[k];
+  check({
+    ask_in: 1000
   });
-  return !anyDifferent && adid === oldAttribution.adid;
-}
-
-/**
- * Check if attribution result is valid
- *
- * @param {string} adid
- * @param {Object=} attribution
- * @returns {boolean}
- * @private
- */
-function _isValid(_ref2 /*:: */) /*: boolean*/{
-  var _ref2$adid = _ref2 /*:: */.adid,
-    adid = _ref2$adid === void 0 ? '' : _ref2$adid,
-    _ref2$attribution = _ref2 /*:: */.attribution,
-    attribution = _ref2$attribution === void 0 ? {} : _ref2$attribution;
-  return !!adid && !!intersection(_whitelist, Object.keys(attribution)).length;
-}
-
-/**
- * Update attribution and initiate client's callback
- *
- * @param {Object} result
- * @private
- */
-function _setAttribution(result /*: HttpSuccessResponseT*/) /*: Promise<AttributionStateT>*/{
-  if (isEmpty(result) || !_isValid(result) || _isSame(result)) {
-    return attribution_Promise.resolve({
-      state: 'same'
-    });
-  }
-  var attribution /*: AttributionMapT*/ = entries(result.attribution).filter(function (_ref3) {
-    var _ref4 = _slicedToArray(_ref3, 1),
-      key = _ref4[0];
-    return _whitelist.indexOf(key) !== -1;
-  }).reduce(reducer, {
-    adid: result.adid
-  });
-  activity_state.current = _objectSpread2(_objectSpread2({}, activity_state.current), {}, {
-    attribution: attribution
-  });
-  return identity_persist().then(function () {
-    publish('attribution:change', attribution);
-    sdk_logger.info('Attribution has been updated');
-    return {
-      state: 'changed'
-    };
-  });
-}
-
-/**
- * Store attribution or make another request if attribution not yet available
- *
- * @param {Object} result
- * @param {Function} finish
- * @param {Function} retry
- * @returns {Promise}
- * @private
- */
-function attribution_continue(result /*: HttpSuccessResponseT | HttpErrorResponseT*/, finish /*: HttpFinishCbT*/, retry /*: HttpRetryCbT*/) /*: Promise<HttpSuccessResponseT | HttpErrorResponseT | AttributionStateT>*/{
-  if (!result || result && result.status === 'error') {
-    finish();
-    return attribution_Promise.resolve({
-      state: 'unknown'
-    });
-  }
-  if (!result.ask_in) {
-    finish();
-    return _setAttribution(result);
-  }
-  return retry(result.ask_in);
-}
-
-/**
- * Request attribution if session asked for it
- *
- * @param {Object=} sessionResult
- * @param {number=} sessionResult.ask_in
- */
-function check(sessionResult /*: HttpSuccessResponseT*/) /*: Promise<?ActivityStateMapT>*/{
-  var activityState = ActivityState.current;
-  var askIn = (sessionResult || {}).ask_in;
-  if (!askIn && (activityState.attribution || !activityState.installed)) {
-    return attribution_Promise.resolve(activityState);
-  }
-  attribution_request.send({
-    params: _objectSpread({
-      initiatedBy: !sessionResult ? 'sdk' : 'backend'
-    }, ActivityState.getParams()),
-    wait: askIn
-  });
-  ActivityState.updateSessionOffset();
+  publish('attribution:check');
   return persist();
-}
-
-/**
- * Destroy attribution by clearing running request
- */
-function attribution_destroy() /*: void*/{
-  attribution_request.clear();
 }
 
 ;// CONCATENATED MODULE: ./src/sdk/gdpr-forget-device.js
@@ -19571,6 +19593,7 @@ function config_api_request_parser(result) {
   if (app_settings.length > 0) {
     constants_configs.app_settings_enabled = true;
   }
+  console.log('att get ', attributions);
   config_api_request_config = {
     eventUrl: events,
     sessionUrl: sessions,
@@ -19609,7 +19632,7 @@ function setConfigs() {
     constants_configs.sessions = parsedConfig.sessionUrl;
     constants_configs.sdk_clicks = parsedConfig.sdkClickUrl;
     constants_configs.sdk_infos = parsedConfig.sdkInfosUrl;
-    constants_configs.attributions = parsedConfig.attributions;
+    constants_configs.attributions = parsedConfig.AttributionUrl;
     constants_configs.pkg_info = parsedConfig.packageInfoUrl;
     constants_configs.app_settings = parsedConfig.appSettingUrl;
     constants_configs.base_url = parsedConfig.baseUrl;
@@ -19655,26 +19678,26 @@ function getConfig(platform, env) /*: VersionConfigParamsT*/{
       switch (env) {
         case EnvirmentType.DEBUG:
           return {
-            sdkVersion: '1.5.7',
+            sdkVersion: '0.8.3-alpha',
             sdkVersionCode: '20',
-            sdkHashBuild: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
-            sdkPlatform: 'android_native',
+            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db16419c0d34451adf4633131cffe25a5f1c',
+            sdkPlatform: 'web',
             sdkEnvirment: 'debug'
           };
         case EnvirmentType.STAGE:
           return {
-            sdkVersion: '1.5.7',
+            sdkVersion: '0.8.3-alpha',
             sdkVersionCode: '20',
-            sdkHashBuild: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
-            sdkPlatform: 'android_native',
+            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db16419c0d34451adf4633131cffe25a5f1c',
+            sdkPlatform: 'web',
             sdkEnvirment: 'stage'
           };
         case EnvirmentType.PRODUCTION:
           return {
-            sdkVersion: '1.5.7',
+            sdkVersion: '0.8.3-alpha',
             sdkVersionCode: '20',
-            sdkHashBuild: '82b12fd10673cf9684e73484f02bef065e857f2691f94112e2fafafe3895c2da',
-            sdkPlatform: 'android_native',
+            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db16419c0d34451adf4633131cffe25a5f1c',
+            sdkPlatform: 'web',
             sdkEnvirment: 'production'
           };
       }
