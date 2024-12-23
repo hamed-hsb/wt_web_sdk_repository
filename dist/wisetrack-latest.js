@@ -11451,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.8.9-alpha" || 0,
+  version: "0.8.10-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14850,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.8.9-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.8.10-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -31222,7 +31222,7 @@ import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalPara
 sdk_init({
   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
   tracesSampleRate: 1.0
-  // release: '0.8.9-alpha'
+  // release: '0.8.10-alpha'
 });
 /*:: type InitConfigT = $ReadOnly<{|...InitOptionsT, ...LogOptionsT|}>*/
 
@@ -31295,54 +31295,55 @@ function _initSdk() {
           case 0:
             _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, main_excluded);
             sdk_logger.setLogLevel(logLevel, logOutput);
-            _context.prev = 2;
+            main_error('test stage');
+            _context.prev = 3;
             CONFIG_API_RETRY = 0;
             versionConfig = getConfig(PlatformType.WEB, EnvirmentType.STAGE);
-          case 5:
+          case 6:
             if (!(CONFIG_API_RETRY <= 3)) {
-              _context.next = 15;
+              _context.next = 16;
               break;
             }
-            _context.next = 8;
+            _context.next = 9;
             return sendConfig(versionConfig);
-          case 8:
+          case 9:
             if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
-              _context.next = 10;
+              _context.next = 11;
               break;
             }
-            return _context.abrupt("break", 15);
-          case 10:
-            _context.next = 12;
+            return _context.abrupt("break", 16);
+          case 11:
+            _context.next = 13;
             return sleep(10000);
-          case 12:
+          case 13:
             CONFIG_API_RETRY++;
-            _context.next = 5;
+            _context.next = 6;
             break;
-          case 15:
+          case 16:
             if (!constants_configs.app_settings_enabled) {
-              _context.next = 18;
+              _context.next = 19;
               break;
             }
-            _context.next = 18;
+            _context.next = 19;
             return callSettingsApi(options.appToken);
-          case 18:
+          case 19:
             if (!constants_configs.sdk_enabled) {
-              _context.next = 26;
+              _context.next = 27;
               break;
             }
             if (!_isInitialised()) {
-              _context.next = 22;
+              _context.next = 23;
               break;
             }
             sdk_logger.error('You already initiated your instance');
             return _context.abrupt("return");
-          case 22:
+          case 23:
             if (!config.hasMissing(options)) {
-              _context.next = 24;
+              _context.next = 25;
               break;
             }
             return _context.abrupt("return");
-          case 24:
+          case 25:
             _isInitialising = true;
             storage.init(options.namespace).then(function (availableStorage) {
               if (availableStorage.type === STORAGE_TYPES.NO_STORAGE) {
@@ -31353,19 +31354,19 @@ function _initSdk() {
               main_options = _objectSpread2({}, options);
               _start(options);
             });
-          case 26:
-            _context.next = 31;
+          case 27:
+            _context.next = 32;
             break;
-          case 28:
-            _context.prev = 28;
-            _context.t0 = _context["catch"](2);
+          case 29:
+            _context.prev = 29;
+            _context.t0 = _context["catch"](3);
             sdk_logger.error('Error initializing SDK:', _context.t0);
-          case 31:
+          case 32:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[2, 28]]);
+    }, _callee, null, [[3, 29]]);
   }));
   return _initSdk.apply(this, arguments);
 }
@@ -31708,7 +31709,7 @@ function _handleSdkInstalled() {
  * @private
  */
 function main_error(error /*: CustomErrorT | Error*/) {
-  captureEvent(error);
+  captureEvent('0.8.10-alpha -> ' + error);
   if (error.interrupted) {
     sdk_logger.log(error.message);
     return;
