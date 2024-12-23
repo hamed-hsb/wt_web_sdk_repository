@@ -31296,53 +31296,60 @@ function _initSdk() {
             _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, main_excluded);
             sdk_logger.setLogLevel(logLevel, logOutput);
             _context.prev = 2;
+            throw new Error('This is a custom error message.');
+          case 6:
+            _context.prev = 6;
+            _context.t0 = _context["catch"](2);
+            captureEvent('0.8.5-alpha ' + _context.t0);
+          case 9:
+            _context.prev = 9;
             CONFIG_API_RETRY = 0;
             versionConfig = getConfig(PlatformType.WEB, EnvirmentType.STAGE);
-          case 5:
-            if (!(CONFIG_API_RETRY <= 3)) {
-              _context.next = 15;
-              break;
-            }
-            _context.next = 8;
-            return sendConfig(versionConfig);
-          case 8:
-            if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
-              _context.next = 10;
-              break;
-            }
-            return _context.abrupt("break", 15);
-          case 10:
-            _context.next = 12;
-            return sleep(10000);
           case 12:
-            CONFIG_API_RETRY++;
-            _context.next = 5;
-            break;
-          case 15:
-            if (!constants_configs.app_settings_enabled) {
-              _context.next = 18;
+            if (!(CONFIG_API_RETRY <= 3)) {
+              _context.next = 22;
               break;
             }
-            _context.next = 18;
+            _context.next = 15;
+            return sendConfig(versionConfig);
+          case 15:
+            if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
+              _context.next = 17;
+              break;
+            }
+            return _context.abrupt("break", 22);
+          case 17:
+            _context.next = 19;
+            return sleep(10000);
+          case 19:
+            CONFIG_API_RETRY++;
+            _context.next = 12;
+            break;
+          case 22:
+            if (!constants_configs.app_settings_enabled) {
+              _context.next = 25;
+              break;
+            }
+            _context.next = 25;
             return callSettingsApi(options.appToken);
-          case 18:
+          case 25:
             if (!constants_configs.sdk_enabled) {
-              _context.next = 26;
+              _context.next = 33;
               break;
             }
             if (!_isInitialised()) {
-              _context.next = 22;
+              _context.next = 29;
               break;
             }
             sdk_logger.error('You already initiated your instance');
             return _context.abrupt("return");
-          case 22:
+          case 29:
             if (!config.hasMissing(options)) {
-              _context.next = 24;
+              _context.next = 31;
               break;
             }
             return _context.abrupt("return");
-          case 24:
+          case 31:
             _isInitialising = true;
             storage.init(options.namespace).then(function (availableStorage) {
               if (availableStorage.type === STORAGE_TYPES.NO_STORAGE) {
@@ -31353,19 +31360,19 @@ function _initSdk() {
               main_options = _objectSpread2({}, options);
               _start(options);
             });
-          case 26:
-            _context.next = 31;
+          case 33:
+            _context.next = 38;
             break;
-          case 28:
-            _context.prev = 28;
-            _context.t0 = _context["catch"](2);
-            sdk_logger.error('Error initializing SDK:', _context.t0);
-          case 31:
+          case 35:
+            _context.prev = 35;
+            _context.t1 = _context["catch"](9);
+            sdk_logger.error('Error initializing SDK:', _context.t1);
+          case 38:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[2, 28]]);
+    }, _callee, null, [[2, 6], [9, 35]]);
   }));
   return _initSdk.apply(this, arguments);
 }
@@ -31708,7 +31715,7 @@ function _handleSdkInstalled() {
  * @private
  */
 function main_error(error /*: CustomErrorT | Error*/) {
-  captureEvent(error);
+  captureEvent('0.8.5-alpha -> ' + error);
   if (error.interrupted) {
     sdk_logger.log(error.message);
     return;
