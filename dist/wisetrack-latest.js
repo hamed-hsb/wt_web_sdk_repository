@@ -11451,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.8.13-alpha" || 0,
+  version: "0.8.14-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14850,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.8.13-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.8.14-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -27457,7 +27457,7 @@ function captureMessage(message, captureContext) {
   // arity of the `captureMessage(message, level)` method.
   const level = typeof captureContext === 'string' ? captureContext : undefined;
   const context = typeof captureContext !== 'string' ? { captureContext } : undefined;
-  return currentScopes_getCurrentScope().captureMessage(message, level, context);
+  return getCurrentScope().captureMessage(message, level, context);
 }
 
 /**
@@ -31219,13 +31219,29 @@ import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalPara
 
 
 
+
+// SentryWT.init({
+//   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
+//   tracesSampleRate: 1.0, 
+//   // release: '0.8.14-alpha'
+// })
+
+// Initialize Sentry with a specific configuration
 sdk_init({
   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
-  tracesSampleRate: 1.0
-  // release: '0.8.13-alpha'
+  release: '0.8.14-alpha',
+  environment: 'production' // or other contexts
+});
+
+// This will ensure the scope is confined to this instance of the SDK
+currentScopes_withScope(function (scope) {
+  // scope is the current scope inside of this callback!
+  scope.setTag('my-tag', 'my value');
+  // this tag will only be applied to events captured inside of this callback
+  // the following event will have the tag:
+  captureException(new Error('my error'));
 });
 /*:: type InitConfigT = $ReadOnly<{|...InitOptionsT, ...LogOptionsT|}>*/
-
 /**
  * In-memory parameters to be used if restarting
  *
@@ -31295,59 +31311,54 @@ function _initSdk() {
           case 0:
             _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, main_excluded);
             sdk_logger.setLogLevel(logLevel, logOutput);
-            try {
-              captureMessage('Something went wrong');
-            } catch (error) {
-              sdk_logger.error('Error initializing SDK:', error);
-            }
-            _context.prev = 3;
+            _context.prev = 2;
             CONFIG_API_RETRY = 0;
             versionConfig = getConfig(PlatformType.WEB, EnvirmentType.STAGE);
-          case 6:
+          case 5:
             if (!(CONFIG_API_RETRY <= 3)) {
-              _context.next = 16;
+              _context.next = 15;
               break;
             }
-            _context.next = 9;
+            _context.next = 8;
             return sendConfig(versionConfig);
-          case 9:
+          case 8:
             if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
-              _context.next = 11;
+              _context.next = 10;
               break;
             }
-            return _context.abrupt("break", 16);
-          case 11:
-            _context.next = 13;
+            return _context.abrupt("break", 15);
+          case 10:
+            _context.next = 12;
             return sleep(10000);
-          case 13:
+          case 12:
             CONFIG_API_RETRY++;
-            _context.next = 6;
+            _context.next = 5;
             break;
-          case 16:
+          case 15:
             if (!constants_configs.app_settings_enabled) {
-              _context.next = 19;
+              _context.next = 18;
               break;
             }
-            _context.next = 19;
+            _context.next = 18;
             return callSettingsApi(options.appToken);
-          case 19:
+          case 18:
             if (!constants_configs.sdk_enabled) {
-              _context.next = 27;
+              _context.next = 26;
               break;
             }
             if (!_isInitialised()) {
-              _context.next = 23;
+              _context.next = 22;
               break;
             }
             sdk_logger.error('You already initiated your instance');
             return _context.abrupt("return");
-          case 23:
+          case 22:
             if (!config.hasMissing(options)) {
-              _context.next = 25;
+              _context.next = 24;
               break;
             }
             return _context.abrupt("return");
-          case 25:
+          case 24:
             _isInitialising = true;
             storage.init(options.namespace).then(function (availableStorage) {
               if (availableStorage.type === STORAGE_TYPES.NO_STORAGE) {
@@ -31358,19 +31369,19 @@ function _initSdk() {
               main_options = _objectSpread2({}, options);
               _start(options);
             });
-          case 27:
-            _context.next = 32;
+          case 26:
+            _context.next = 31;
             break;
-          case 29:
-            _context.prev = 29;
-            _context.t0 = _context["catch"](3);
+          case 28:
+            _context.prev = 28;
+            _context.t0 = _context["catch"](2);
             sdk_logger.error('Error initializing SDK:', _context.t0);
-          case 32:
+          case 31:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[3, 29]]);
+    }, _callee, null, [[2, 28]]);
   }));
   return _initSdk.apply(this, arguments);
 }
@@ -31713,7 +31724,7 @@ function _handleSdkInstalled() {
  * @private
  */
 function main_error(error /*: CustomErrorT | Error*/) {
-  captureEvent('0.8.13-alpha -> ' + error);
+  //SentryWT.captureEvent('0.8.14-alpha -> '+error)
   if (error.interrupted) {
     sdk_logger.log(error.message);
     return;
