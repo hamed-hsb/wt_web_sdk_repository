@@ -1,7 +1,6 @@
 # web_sdk_module
 
 
-Version: 0.8.6-alpha
 
 ## Getting started
 
