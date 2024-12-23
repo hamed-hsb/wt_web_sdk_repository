@@ -11451,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.8.7-alpha" || 0,
+  version: "0.8.9-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14850,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.8.7-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.8.9-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -31222,7 +31222,7 @@ import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalPara
 sdk_init({
   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
   tracesSampleRate: 1.0
-  // release: '0.8.7-alpha'
+  // release: '0.8.9-alpha'
 });
 /*:: type InitConfigT = $ReadOnly<{|...InitOptionsT, ...LogOptionsT|}>*/
 
