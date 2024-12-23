@@ -11451,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.8.12-alpha" || 0,
+  version: "0.8.13-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14850,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.8.12-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.8.13-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -27457,7 +27457,7 @@ function captureMessage(message, captureContext) {
   // arity of the `captureMessage(message, level)` method.
   const level = typeof captureContext === 'string' ? captureContext : undefined;
   const context = typeof captureContext !== 'string' ? { captureContext } : undefined;
-  return getCurrentScope().captureMessage(message, level, context);
+  return currentScopes_getCurrentScope().captureMessage(message, level, context);
 }
 
 /**
@@ -31222,7 +31222,7 @@ import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalPara
 sdk_init({
   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
   tracesSampleRate: 1.0
-  // release: '0.8.12-alpha'
+  // release: '0.8.13-alpha'
 });
 /*:: type InitConfigT = $ReadOnly<{|...InitOptionsT, ...LogOptionsT|}>*/
 
@@ -31295,7 +31295,11 @@ function _initSdk() {
           case 0:
             _ref2 = _args.length > 0 && _args[0] !== undefined ? _args[0] : {}, logLevel = _ref2.logLevel, logOutput = _ref2.logOutput, options = _objectWithoutProperties(_ref2, main_excluded);
             sdk_logger.setLogLevel(logLevel, logOutput);
-            captureEvent('0.8.12-alpha -> ' + new Error('test stage'));
+            try {
+              captureMessage('Something went wrong');
+            } catch (error) {
+              sdk_logger.error('Error initializing SDK:', error);
+            }
             _context.prev = 3;
             CONFIG_API_RETRY = 0;
             versionConfig = getConfig(PlatformType.WEB, EnvirmentType.STAGE);
@@ -31709,7 +31713,7 @@ function _handleSdkInstalled() {
  * @private
  */
 function main_error(error /*: CustomErrorT | Error*/) {
-  captureEvent('0.8.12-alpha -> ' + error);
+  captureEvent('0.8.13-alpha -> ' + error);
   if (error.interrupted) {
     sdk_logger.log(error.message);
     return;
