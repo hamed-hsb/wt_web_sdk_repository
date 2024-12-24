@@ -11451,7 +11451,7 @@ function isLocalStorageSupported() /*: boolean*/{
 |}*/
 var Globals = {
   namespace: "wisetrack-sdk" || 0,
-  version: "0.8.14-alpha" || 0,
+  version: "0.9.0-alpha" || 0,
   env: "production"
 };
 /* harmony default export */ const globals = (Globals);
@@ -14850,7 +14850,7 @@ _defineProperty(ConstantsConfig, "session_interval", '1800');
 _defineProperty(ConstantsConfig, "sdk_update", false);
 _defineProperty(ConstantsConfig, "force_update", false);
 _defineProperty(ConstantsConfig, "app_settings_enabled", false);
-_defineProperty(ConstantsConfig, "sdk_version", '0.8.14-alpha');
+_defineProperty(ConstantsConfig, "sdk_version", '0.9.0-alpha');
 _defineProperty(ConstantsConfig, "CONFIG_API_HTTP_ERROR_STATUS", false);
 _defineProperty(ConstantsConfig, "HTTP_STATUS_CODE", 200);
 /* harmony default export */ const constants_configs = (ConstantsConfig);
@@ -14940,7 +14940,7 @@ function _getPlatform() /*: PlatformT*/{
 }
 function _getNeedsResponseDetails() /*: NeedsResponseDetailsT*/{
   return {
-    needsResponseDetails: '1'
+    needsResponseDetails: '0'
   };
 }
 function _getReferrer() /*: ReferrerParamsT*/{
@@ -19590,27 +19590,47 @@ function config_api_request_parser(result) {
     session_interval = result.session_interval,
     sdk_update = result.sdk_update,
     force_update = result.force_update;
-  if (app_settings.length > 0) {
-    constants_configs.app_settings_enabled = true;
+  if (app_settings != null) {
+    if (app_settings.length > 0) {
+      constants_configs.app_settings_enabled = true;
+    } else {
+      config_api_request_config = {
+        eventUrl: events,
+        sessionUrl: sessions,
+        sdkClickUrl: sdk_clicks,
+        sdkInfosUrl: sdk_infos,
+        AttributionUrl: attributions,
+        packageInfoUrl: pkg_info,
+        appSettingUrl: app_settings,
+        pageUrl: '/api/v1/pages',
+        baseUrl: base_url,
+        sdkSecure: true,
+        sdkEnabled: sdk_enabled,
+        sentryEnabled: sentry_enabled,
+        forceUpdate: force_update,
+        sdkUpdate: sdk_update,
+        sessionInterval: session_interval // milisecond, but convert to second
+      };
+    }
+  } else {
+    config_api_request_config = {
+      eventUrl: events,
+      sessionUrl: sessions,
+      sdkClickUrl: sdk_clicks,
+      sdkInfosUrl: sdk_infos,
+      AttributionUrl: attributions,
+      packageInfoUrl: pkg_info,
+      appSettingUrl: '',
+      pageUrl: '/api/v1/pages',
+      baseUrl: base_url,
+      sdkSecure: true,
+      sdkEnabled: sdk_enabled,
+      sentryEnabled: sentry_enabled,
+      forceUpdate: force_update,
+      sdkUpdate: sdk_update,
+      sessionInterval: session_interval // milisecond, but convert to second
+    };
   }
-  console.log('att get ', attributions);
-  config_api_request_config = {
-    eventUrl: events,
-    sessionUrl: sessions,
-    sdkClickUrl: sdk_clicks,
-    sdkInfosUrl: sdk_infos,
-    AttributionUrl: attributions,
-    packageInfoUrl: pkg_info,
-    appSettingUrl: app_settings,
-    pageUrl: '/api/v1/pages',
-    baseUrl: base_url,
-    sdkSecure: true,
-    sdkEnabled: sdk_enabled,
-    sentryEnabled: sentry_enabled,
-    forceUpdate: force_update,
-    sdkUpdate: sdk_update,
-    sessionInterval: session_interval // milisecond, but convert to second
-  };
 
   localStorage.setItem(sdk_configs_key, JSON.stringify(config_api_request_config));
 }
@@ -19678,25 +19698,25 @@ function getConfig(platform, env) /*: VersionConfigParamsT*/{
       switch (env) {
         case EnvirmentType.DEBUG:
           return {
-            sdkVersion: '0.8.3-alpha',
+            sdkVersion: '0.9.0-alpha',
             sdkVersionCode: '20',
-            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db16419c0d34451adf4633131cffe25a5f1c',
+            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db164a2d5d2d5ey5e5et5er3131cffe25a5f1c',
             sdkPlatform: 'web',
             sdkEnvirment: 'debug'
           };
         case EnvirmentType.STAGE:
           return {
-            sdkVersion: '0.8.3-alpha',
+            sdkVersion: '0.9.0-alpha',
             sdkVersionCode: '20',
-            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db16419c0d34451adf4633131cffe25a5f1c',
+            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db164a2d5d2d5ey5e5et5er3131cffe25a5f1c',
             sdkPlatform: 'web',
             sdkEnvirment: 'stage'
           };
         case EnvirmentType.PRODUCTION:
           return {
-            sdkVersion: '0.8.3-alpha',
+            sdkVersion: '0.9.0-alpha',
             sdkVersionCode: '20',
-            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db16419c0d34451adf4633131cffe25a5f1c',
+            sdkHashBuild: 'ae58c3f730f0629ca90d1a401ff6db164a2d5d2d5ey5e5et5er3131cffe25a5f1c',
             sdkPlatform: 'web',
             sdkEnvirment: 'production'
           };
@@ -31223,13 +31243,13 @@ import { type InitOptionsT, type LogOptionsT, type EventParamsT, type GlobalPara
 // SentryWT.init({
 //   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
 //   tracesSampleRate: 1.0, 
-//   // release: '0.8.14-alpha'
+//   // release: '0.9.0-alpha'
 // })
 
 // Initialize Sentry with a specific configuration
 sdk_init({
   dsn: 'https://fbb048eabd1c4eb99c47749c716b739f@glitchtip.wisetrackdev.ir/20',
-  release: '0.8.14-alpha',
+  release: '0.9.0-alpha',
   environment: 'production' // or other contexts
 });
 
@@ -31313,52 +31333,54 @@ function _initSdk() {
             sdk_logger.setLogLevel(logLevel, logOutput);
             _context.prev = 2;
             CONFIG_API_RETRY = 0;
-            versionConfig = getConfig(PlatformType.WEB, EnvirmentType.STAGE);
+            versionConfig = getConfig(PlatformType.WEB, EnvirmentType.PRODUCTION);
           case 5:
             if (!(CONFIG_API_RETRY <= 3)) {
-              _context.next = 15;
+              _context.next = 16;
               break;
             }
             _context.next = 8;
             return sendConfig(versionConfig);
           case 8:
+            console.log('HTTP_STATUS_CODE: ', constants_configs.HTTP_STATUS_CODE);
             if (!(constants_configs.HTTP_STATUS_CODE == 200)) {
-              _context.next = 10;
+              _context.next = 11;
               break;
             }
-            return _context.abrupt("break", 15);
-          case 10:
-            _context.next = 12;
+            return _context.abrupt("break", 16);
+          case 11:
+            _context.next = 13;
             return sleep(10000);
-          case 12:
+          case 13:
             CONFIG_API_RETRY++;
             _context.next = 5;
             break;
-          case 15:
+          case 16:
+            console.log('app_settings_enabled: ', constants_configs.app_settings_enabled);
             if (!constants_configs.app_settings_enabled) {
-              _context.next = 18;
+              _context.next = 20;
               break;
             }
-            _context.next = 18;
+            _context.next = 20;
             return callSettingsApi(options.appToken);
-          case 18:
+          case 20:
             if (!constants_configs.sdk_enabled) {
-              _context.next = 26;
+              _context.next = 28;
               break;
             }
             if (!_isInitialised()) {
-              _context.next = 22;
+              _context.next = 24;
               break;
             }
             sdk_logger.error('You already initiated your instance');
             return _context.abrupt("return");
-          case 22:
+          case 24:
             if (!config.hasMissing(options)) {
-              _context.next = 24;
+              _context.next = 26;
               break;
             }
             return _context.abrupt("return");
-          case 24:
+          case 26:
             _isInitialising = true;
             storage.init(options.namespace).then(function (availableStorage) {
               if (availableStorage.type === STORAGE_TYPES.NO_STORAGE) {
@@ -31369,19 +31391,19 @@ function _initSdk() {
               main_options = _objectSpread2({}, options);
               _start(options);
             });
-          case 26:
-            _context.next = 31;
-            break;
           case 28:
-            _context.prev = 28;
+            _context.next = 33;
+            break;
+          case 30:
+            _context.prev = 30;
             _context.t0 = _context["catch"](2);
             sdk_logger.error('Error initializing SDK:', _context.t0);
-          case 31:
+          case 33:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[2, 28]]);
+    }, _callee, null, [[2, 30]]);
   }));
   return _initSdk.apply(this, arguments);
 }
@@ -31724,7 +31746,7 @@ function _handleSdkInstalled() {
  * @private
  */
 function main_error(error /*: CustomErrorT | Error*/) {
-  //SentryWT.captureEvent('0.8.14-alpha -> '+error)
+  //SentryWT.captureEvent('0.9.0-alpha -> '+error)
   if (error.interrupted) {
     sdk_logger.log(error.message);
     return;
